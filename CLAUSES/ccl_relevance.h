@@ -109,6 +109,8 @@ APRControl_p APRControlAlloc();
 void APRControlFree(APRControl_p trash);
 bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b);
 APRControl_p APRBuildGraph(ClauseSet_p clauses);
+int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses);
+bool APRGraphAddClause(APRControl_p control, Clause_p clause);
 
 #endif
 

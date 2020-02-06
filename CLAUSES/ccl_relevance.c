@@ -586,13 +586,24 @@ APRControl_p APRBuildGraph(ClauseSet_p clauses)
 		Clause_p current_clause = current_node->clause;
 		Eqn_p current_literal = current_node->literal;
 		PStack_p current_edges = current_node->edges;
+		
+		assert(current_node);
+		assert(current_clause);
+		assert(current_literal);
+		assert(current_edges);
+		assert(current_node->type);
+		
 		if (current_node->type == 1)
 		{
 			// Create type 2 (intra-clause) edges
 			PStack_p current_bucket = IntMapGetVal(map, current_clause->ident);
+			assert(current_bucket);
+			
 			for (PStackPointer bucket_iterator = 0; bucket_iterator < PStackGetSP(current_bucket); bucket_iterator++)
 			{
 				APR_p bucket_node = PStackElementP(current_bucket, bucket_iterator);
+				assert(bucket_node);
+				assert(bucket_node->type);
 				if (bucket_node->type == 1) // Wrong type of node
 				{
 					continue;
@@ -614,6 +625,7 @@ APRControl_p APRBuildGraph(ClauseSet_p clauses)
 			for (PStackPointer graph_iterator2 = 0; graph_iterator2 < PStackGetSP(graph_nodes); graph_iterator2++)
 			{
 				APR_p visited_node = PStackElementP(graph_nodes, graph_iterator2);
+				assert(visited_node);
 				if (visited_node->type == 2 || visited_node->clause == current_clause)
 				{
 					continue;
@@ -644,6 +656,33 @@ bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b)
 	bool res = EqnUnifyP(a, b);
 	
 	return res;
+}
+
+/*  Return number of clauses added to the APR graph
+ * 
+*/
+int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses)
+{
+	IntMap_p map = control->map;
+	int num_added = 0;
+	Clause_p handle = clauses->anchor->succ;
+	while (handle != clauses->anchor)
+	{
+		if (IntMapGetVal(map, handle->ident) == NULL)
+		{
+			num_added++;
+			// Add the clause to the graph
+		}
+		handle = handle->succ;
+	}
+	return num_added;
+}
+/*
+ * Return true if clause is already in the graph, false, otherwise.
+*/
+bool APRGraphAddClause(APRControl_p control, Clause_p clause)
+{
+	return false;
 }
 
 /*---------------------------------------------------------------------*/

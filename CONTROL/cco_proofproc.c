@@ -1446,6 +1446,9 @@ Clause_p ProcessClause(ProofState_p state, ProofControl_p control,
 		printf("Attempting to build APR Graph...\n");
 		APRControl_p apr_control = APRBuildGraph(state->unprocessed);
 		printf("Successfully built APR graph.\n");
+		int num_in_graph = APRGraphAddClauses(apr_control, state->unprocessed);
+		printf("Number of unprocessed: %ld\n", state->unprocessed->members);
+		printf("Number of unprocessed without a value in the intmap (has no bucket): %d\n", num_in_graph);
 		exit(0);
 	}
    
