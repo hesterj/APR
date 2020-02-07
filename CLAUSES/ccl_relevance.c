@@ -559,11 +559,21 @@ APRControl_p APRBuildGraph(ClauseSet_p clauses)
 	* and add a map taking each clause ident in set to its bucket
 	*/
 	Clause_p handle = clauses->anchor->succ;
+	int debug_counter = 0;
 	while (handle != clauses->anchor)
 	{
+		assert(handle);
+		assert(handle->ident);
 		PStack_p clause_bucket = PStackAlloc();
 		PStackPushP(buckets, clause_bucket);
-		IntMapAssign(map, handle->ident, clause_bucket);
+		long handle_ident = handle->ident;
+		if(handle_ident < 0)
+		{
+			handle_ident = handle_ident - LONG_MIN;
+		}
+		printf("/* APR graph */ ");ClausePrint(GlobalOut, handle, true);printf("\n");
+		//printf("# handle_ident %ld\n", handle_ident);
+		IntMapAssign(map, handle_ident, clause_bucket);
 		PStack_p clause_literals = EqnListToStack(handle->literals);
 		for (PStackPointer p = 0; p < PStackGetSP(clause_literals); p++)
 		{
@@ -574,29 +584,39 @@ APRControl_p APRBuildGraph(ClauseSet_p clauses)
 			PStackPushP(graph_nodes, type1);
 			PStackPushP(clause_bucket, type2);
 			PStackPushP(graph_nodes, type2);
+			//printf("# Created nodes and added them to the appropriate buckets and node index.\n");
 		}
+		debug_counter++;
+		//printf("# Clauses traversed: %d\n", debug_counter);
 		PStackFree(clause_literals);
 		handle = handle->succ;
 	}
 	// Now we need to actually build the graph.
 	// Add all possible edges from every node.
+	long num_edges = 0;
 	for (PStackPointer graph_iterator = 0; graph_iterator<PStackGetSP(graph_nodes); graph_iterator++)
 	{
 		APR_p current_node = PStackElementP(graph_nodes, graph_iterator);
 		Clause_p current_clause = current_node->clause;
 		Eqn_p current_literal = current_node->literal;
 		PStack_p current_edges = current_node->edges;
+		long current_ident = current_clause->ident;
+		if (current_ident < 0)
+		{
+			current_ident = current_ident - LONG_MIN;
+		}
 		
 		assert(current_node);
 		assert(current_clause);
 		assert(current_literal);
 		assert(current_edges);
 		assert(current_node->type);
+		assert(current_ident > 0);
 		
 		if (current_node->type == 1)
 		{
 			// Create type 2 (intra-clause) edges
-			PStack_p current_bucket = IntMapGetVal(map, current_clause->ident);
+			PStack_p current_bucket = IntMapGetVal(map, current_ident);
 			assert(current_bucket);
 			
 			for (PStackPointer bucket_iterator = 0; bucket_iterator < PStackGetSP(current_bucket); bucket_iterator++)
@@ -612,8 +632,9 @@ APRControl_p APRBuildGraph(ClauseSet_p clauses)
 				{
 					if (bucket_node->literal != current_literal)
 					{
-						assert(bucket_node->clause == clause);
+						assert(bucket_node->clause == current_clause);
 						PStackPushP(current_edges, bucket_node);
+						num_edges++;
 					}
 				}
 			}
@@ -636,12 +657,14 @@ APRControl_p APRBuildGraph(ClauseSet_p clauses)
 					if (APRComplementarilyUnifiable(current_literal, visited_node->literal))
 					{
 						PStackPushP(current_edges, visited_node);
+						num_edges++;
 					}
 				}
 			}
 		}
 	}
 	
+	printf("# APR Graph with %ld nodes and %ld edges created.\n",PStackGetSP(graph_nodes),num_edges);
 	return control;
 }
 
@@ -668,10 +691,17 @@ int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses)
 	Clause_p handle = clauses->anchor->succ;
 	while (handle != clauses->anchor)
 	{
-		if (IntMapGetVal(map, handle->ident) == NULL)
+		long handle_ident = handle->ident;
+		if (handle_ident < 0)
+		{
+			handle_ident = handle_ident - LONG_MIN;
+		}
+		if (IntMapGetVal(map, handle_ident) == NULL)
 		{
 			num_added++;
 			// Add the clause to the graph
+			//Nodes
+			//Edges 
 		}
 		handle = handle->succ;
 	}
@@ -683,6 +713,92 @@ int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses)
 bool APRGraphAddClause(APRControl_p control, Clause_p clause)
 {
 	return false;
+}
+
+/* Collect the clauses that are within relevance distance of set.
+ * Uses the APR graph specified by the APRControl_p
+ *  
+*/
+
+PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance)
+{
+	assert(relevance);
+	assert(control);
+	assert(set);
+	IntMap_p map = control->map;
+	int search_distance = (2*relevance) - 2;
+	PStack_p handle_bucket = NULL;
+	PStack_p starting_nodes = PStackAlloc();
+	Clause_p handle = set->anchor->succ;
+	while (handle != set->anchor)
+	{
+		long handle_ident = handle->ident;
+		if (handle_ident < 0)
+		{
+			handle_ident = handle_ident - LONG_MIN;
+		}
+		handle_bucket = IntMapGetVal(map, handle_ident);
+		assert(handle_bucket);
+		for (PStackPointer p = 0; p < PStackGetSP(handle_bucket); p++)
+		{
+			APR_p handle_node = PStackElementP(handle_bucket, p);
+			assert(handle_node);
+			if (handle_node->type == 2)
+			{
+				PStackPushP(starting_nodes, handle_node);
+			}
+		}
+		handle = handle->succ;
+		// handle_bucket is the collection of nodes corresponding to handle in the apr graph
+		// this method does NOT add nodes if set is not already included in the apr graph
+	}
+	PTree_p clause_tree = NULL;
+	int num_found = APRBreadthFirstSearch(control, starting_nodes, &clause_tree, search_distance);
+	printf("# %d relevant clauses found.\n", num_found);
+	PStack_p res = PStackAlloc();
+	PTreeToPStack(res, clause_tree);
+	PStackFree(starting_nodes);
+	PTreeFree(clause_tree);
+	return res;
+}
+
+int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses, int relevance)
+{	
+	PStack_p temp = PStackAlloc();
+	int num_clauses_found = 0;
+	for (PStackPointer p=0; p<PStackGetSP(nodes); p++)
+	{
+		APR_p node = PStackElementP(nodes, p);
+		PStack_p edges = node->edges;
+		Clause_p node_clause = node->clause;
+		assert(node);
+		assert(edges);
+		assert(node_clause);
+		bool clause_added = PTreeStore(clauses, node_clause);
+		if (clause_added)
+		{
+			num_clauses_found++;
+		}
+		for (PStackPointer r=0; r<PStackGetSP(edges); r++)
+		{
+			APR_p new_node = PStackElementP(edges, r);
+			assert(new_node);
+			PStackPushP(temp, new_node);
+		}
+	}
+	PStackReset(nodes);
+	for (PStackPointer q=0; q<PStackGetSP(temp); q++)
+	{
+		APR_p temp_node = PStackElementP(temp, q);
+		assert(temp_node);
+		PStackPushP(nodes, temp_node);
+	}
+	PStackFree(temp);
+	if (relevance != 0)
+	{
+		num_clauses_found += APRBreadthFirstSearch(control, nodes, clauses, relevance - 1);
+	}
+	return num_clauses_found;
 }
 
 /*---------------------------------------------------------------------*/

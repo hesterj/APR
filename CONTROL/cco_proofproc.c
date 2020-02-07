@@ -1441,17 +1441,6 @@ Clause_p ProcessClause(ProofState_p state, ProofControl_p control,
       return NULL;
    }
    
-   if (state->unprocessed->members > 100)
-   {
-		printf("Attempting to build APR Graph...\n");
-		APRControl_p apr_control = APRBuildGraph(state->unprocessed);
-		printf("Successfully built APR graph.\n");
-		int num_in_graph = APRGraphAddClauses(apr_control, state->unprocessed);
-		printf("Number of unprocessed: %ld\n", state->unprocessed->members);
-		printf("Number of unprocessed without a value in the intmap (has no bucket): %d\n", num_in_graph);
-		exit(0);
-	}
-   
    //EvalListPrintComment(GlobalOut, clause->evaluations); printf("\n");
    if(OutputLevel==1)
    {
@@ -1462,6 +1451,31 @@ Clause_p ProcessClause(ProofState_p state, ProofControl_p control,
    ClauseSetExtractEntry(clause);
    ClauseRemoveEvaluations(clause);
    // Orphans have been excluded during selection now
+   
+   if (state->unprocessed->members > 100)
+   {
+		ProofStatePrint(GlobalOut, state);
+		printf("## Attempting to build APR Graph... there are %ld axioms and %ld unprocessed\n", state->axioms->members, state->unprocessed->members);
+		ClauseSetInsertSet(state->unprocessed, state->axioms);
+		printf("## Axioms remaining:\n");
+		ClauseSetPrint(GlobalOut, state->axioms, true);
+		printf("## There are %ld clauses being used to create the graph.\n", state->unprocessed->members);
+		ClauseSetPrint(GlobalOut, state->unprocessed, true);
+		APRControl_p apr_control = APRBuildGraph(state->unprocessed);
+		printf("## Successfully built APR graph.\n");
+		int num_in_graph = APRGraphAddClauses(apr_control, state->unprocessed);
+		printf("## Number of unprocessed: %ld\n", state->unprocessed->members);
+		printf("## Number of unprocessed without a value in the intmap (has no bucket): %d\n", num_in_graph);
+		printf("## Attempting to find relevance of axioms in unprocessed\n");
+		//int relevance_distance = 1;
+		for (int relevance_distance = 1; relevance_distance < 7; relevance_distance++)
+		{
+			PStack_p relevant = APRRelevance(apr_control, state->unprocessed, relevance_distance);
+			printf("## %ld relevant unprocessed clauses found at relevance %d.\n", PStackGetSP(relevant), relevance_distance);
+			PStackFree(relevant);
+		}
+		exit(0);
+	}
 
    ClauseSetProp(clause, CPIsProcessed);
    state->processed_count++;

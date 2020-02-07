@@ -111,6 +111,8 @@ bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b);
 APRControl_p APRBuildGraph(ClauseSet_p clauses);
 int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses);
 bool APRGraphAddClause(APRControl_p control, Clause_p clause);
+int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses, int relevance);
+PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance);
 
 #endif
 

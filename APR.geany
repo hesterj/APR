@@ -28,7 +28,13 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=0
+current_page=4
+FILE_NAME_0=17376;C;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2Feprover%2FCLAUSES%2Fccl_relevance.c;0;3
+FILE_NAME_1=3239;C++;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2Feprover%2FCLAUSES%2Fccl_relevance.h;0;3
+FILE_NAME_2=7181;C;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2Feprover%2FBASICS%2Fclb_intmap.c;0;3
+FILE_NAME_3=3364;C++;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2Feprover%2FBASICS%2Fclb_intmap.h;0;3
+FILE_NAME_4=48743;C;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2Feprover%2FCONTROL%2Fcco_proofproc.c;0;3
+FILE_NAME_5=0;C++;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2Feprover%2FCONTROL%2Fcco_proofproc.h;0;3
 
 [VTE]
 last_dir=/home/john
