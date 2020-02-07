@@ -559,46 +559,36 @@ APRControl_p APRBuildGraph(ClauseSet_p clauses)
 	* and add a map taking each clause ident in set to its bucket
 	*/
 	Clause_p handle = clauses->anchor->succ;
-	int debug_counter = 0;
 	while (handle != clauses->anchor)
 	{
 		assert(handle);
 		assert(handle->ident);
-		PStack_p clause_bucket = PStackAlloc();
-		PStackPushP(buckets, clause_bucket);
-		long handle_ident = handle->ident;
-		if(handle_ident < 0)
-		{
-			handle_ident = handle_ident - LONG_MIN;
-		}
-		printf("/* APR graph */ ");ClausePrint(GlobalOut, handle, true);printf("\n");
-		//printf("# handle_ident %ld\n", handle_ident);
-		IntMapAssign(map, handle_ident, clause_bucket);
-		PStack_p clause_literals = EqnListToStack(handle->literals);
-		for (PStackPointer p = 0; p < PStackGetSP(clause_literals); p++)
-		{
-			Eqn_p literal = PStackElementP(clause_literals, p);
-			APR_p type1 = APRAlloc(1, literal, handle);
-			APR_p type2 = APRAlloc(2, literal, handle);
-			PStackPushP(clause_bucket, type1);
-			PStackPushP(graph_nodes, type1);
-			PStackPushP(clause_bucket, type2);
-			PStackPushP(graph_nodes, type2);
-			//printf("# Created nodes and added them to the appropriate buckets and node index.\n");
-		}
-		debug_counter++;
-		//printf("# Clauses traversed: %d\n", debug_counter);
-		PStackFree(clause_literals);
+		APRGraphAddNodes(control, handle);
 		handle = handle->succ;
 	}
 	// Now we need to actually build the graph.
 	// Add all possible edges from every node.
+   long num_edges = APRGraphUpdateEdges(control);
+	
+	printf("# APR Graph with %ld nodes and %ld edges created.\n",PStackGetSP(graph_nodes),num_edges);
+	return control;
+}
+
+long APRGraphUpdateEdges(APRControl_p control)
+{
+	PStack_p graph_nodes = control->graph_nodes;
+	IntMap_p map = control->map;
 	long num_edges = 0;
 	for (PStackPointer graph_iterator = 0; graph_iterator<PStackGetSP(graph_nodes); graph_iterator++)
 	{
 		APR_p current_node = PStackElementP(graph_nodes, graph_iterator);
 		Clause_p current_clause = current_node->clause;
 		Eqn_p current_literal = current_node->literal;
+		if (PStackGetSP(current_node->edges) > 0)
+		{
+			PStackFree(current_node->edges);
+			current_node->edges = PStackAlloc();
+		}
 		PStack_p current_edges = current_node->edges;
 		long current_ident = current_clause->ident;
 		if (current_ident < 0)
@@ -663,9 +653,7 @@ APRControl_p APRBuildGraph(ClauseSet_p clauses)
 			}
 		}
 	}
-	
-	printf("# APR Graph with %ld nodes and %ld edges created.\n",PStackGetSP(graph_nodes),num_edges);
-	return control;
+	return num_edges;
 }
 
 bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b)
@@ -698,20 +686,52 @@ int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses)
 		}
 		if (IntMapGetVal(map, handle_ident) == NULL)
 		{
+			APRGraphAddNodes(control, handle);
 			num_added++;
 			// Add the clause to the graph
-			//Nodes
-			//Edges 
 		}
 		handle = handle->succ;
 	}
+	long num_edges = 0;
+	num_edges = APRGraphUpdateEdges(control);
 	return num_added;
 }
 /*
  * Return true if clause is already in the graph, false, otherwise.
+ * If it is not in the graph, add it.
+ * 
+ * WARNING: This method does Not add the edges!  Only creates the nodes.
 */
-bool APRGraphAddClause(APRControl_p control, Clause_p clause)
+bool APRGraphAddNodes(APRControl_p control, Clause_p clause)
 {
+	assert(control);
+	assert(clause);
+	// Nodes
+	PStack_p buckets = control->buckets; 
+	IntMap_p map = control->map;
+	PStack_p graph_nodes = control->graph_nodes;
+	PStack_p clause_bucket = PStackAlloc();
+	PStackPushP(buckets, clause_bucket);
+	long handle_ident = clause->ident;
+	if(handle_ident < 0)
+	{
+		handle_ident = handle_ident - LONG_MIN;
+	}
+	//printf("/* APR graph */ ");ClausePrint(GlobalOut, handle, true);printf("\n");
+	//printf("# handle_ident %ld\n", handle_ident);
+	IntMapAssign(map, handle_ident, clause_bucket);
+	PStack_p clause_literals = EqnListToStack(clause->literals);
+	for (PStackPointer p = 0; p < PStackGetSP(clause_literals); p++)
+	{
+		Eqn_p literal = PStackElementP(clause_literals, p);
+		APR_p type1 = APRAlloc(1, literal, clause);
+		APR_p type2 = APRAlloc(2, literal, clause);
+		PStackPushP(clause_bucket, type1);
+		PStackPushP(graph_nodes, type1);
+		PStackPushP(clause_bucket, type2);
+		PStackPushP(graph_nodes, type2);
+	}
+	PStackFree(clause_literals);
 	return false;
 }
 
