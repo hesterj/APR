@@ -749,6 +749,7 @@ PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance)
 	int search_distance = (2*relevance) - 2;
 	PStack_p handle_bucket = NULL;
 	PStack_p starting_nodes = PStackAlloc();
+	
 	Clause_p handle = set->anchor->succ;
 	while (handle != set->anchor)
 	{
