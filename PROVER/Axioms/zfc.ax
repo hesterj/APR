@@ -1,0 +1,220 @@
+/*
+ZFC Axioms, without replacement, as replacement must be built in to the prover.
+Replacement is an infinite schema so cannot be listed here.
+Axioms of comprehension are consequences of axioms of replacement.
+John Hester
+*/
+
+% Extensionality
+
+fof(extensionality, axiom, ![X,Y]:(![Z]:(member(Z,X)<=>member(Z,Y)) => X=Y) ).
+
+% Regularity
+
+fof(regularity,axiom,
+    ( ! [X] :
+        ( X != null_class
+       => ? [U] :
+            (member(U,X)
+            & disjoint(U,X) ) ) )).
+
+% Comprehension (Omitted)
+
+% Pairing
+
+fof(unordered_pair_defn,axiom,
+    ( ! [U,X,Y] :
+        ( member(U,unordered_pair(X,Y))
+      <=> ( U = X
+            | U = Y )  ) )).
+
+% Union
+
+fof(union_defn,axiom,
+    ( ! [X,Y,Z] :
+        ( member(Z,union(X,Y))
+      <=> ( member(Z,X)
+          | member(Z,Y) ) ) )).
+
+% Power Set
+
+fof(power_class_defn,axiom,
+    ( ! [U,X] :
+        ( member(U,power_class(X))
+      <=> (subclass(U,X) ) ) )).
+
+% Infinity
+/*
+fof(infinity, axiom, 
+	?[X]: (member(null_class,X) & ![Y]:(member(Y,X)=>member(successor(Y),X)) 
+		  )
+).
+*/
+fof(infinity, axiom, 
+	(member(null_class,omega) & ![Y]:(member(Y,omega)=>member(successor(Y),omega)) 
+		  )
+).
+
+
+% Universal Choice
+
+fof(choice,axiom,
+    ( ? [XF] :
+        ( function(XF)
+        & ! [Y] :( Y = null_class
+              | member(apply(XF,Y),Y) ) ) ) ).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  DEFINITIONS
+
+% Complement
+/*
+fof(complement,axiom,
+    ( ! [X,Z] :
+        ( member(Z,complement(X))
+      <=> ( ~ member(Z,X) ) ) )).
+*/
+% Intersection
+
+
+fof(intersection,axiom,
+    ( ! [X,Y,Z] :
+        ( member(Z,intersection(X,Y))
+      <=> ( member(Z,X)
+          & member(Z,Y) ) ) )).
+
+% Subclass
+
+fof(subclass_defn, axiom, ![X,Y]: (subclass(X,Y)<=>![Z]:(member(Z,X)=>member(Z,Y)))).
+
+% Empty Class
+
+fof(emptyclass, axiom, ![X]: ~member(X,null_class)).
+
+% Singleton
+
+fof(singleton_set_defn,axiom,
+    ( ! [X] : singleton(X) = unordered_pair(X,X) )).
+    
+% Disjoint
+
+fof(disjoint_defn,axiom,
+    ( ! [X,Y] :
+        ( disjoint(X,Y)
+      <=> ! [U] : ~ ( member(U,X)
+            & member(U,Y) ) ) )).
+            
+% Successor
+
+fof(successor_defn,axiom,
+    ( ! [X] : successor(X) = union(X,singleton(X)) )).
+    
+% Sum class
+
+fof(sum_class_defn,axiom,
+    ( ! [U,X] :
+        ( member(U,sum_class(X))
+      <=> ? [Y] :
+            ( member(U,Y)
+            & member(Y,X) ) ) )).
+            
+% Image %%%%%%%%%
+
+fof(image_defn,axiom,
+    ( ! [Z,X,XR] :( member(Z,image(XR,X)) <=> (?[W]: (member(W,X) & member(ordered_pair(W,Z),XR) ))) )
+    ).
+
+% Apply Function
+
+fof(apply_defn,axiom,
+    ( ! [XF,Y] : apply(XF,Y) = sum_class(image(XF,singleton(Y))) )).
+  
+% Ordered Pair
+
+fof(ordered_pair_defn,axiom,
+    ( ! [X,Y] : ordered_pair(X,Y) = unordered_pair(singleton(X),unordered_pair(X,singleton(Y))) )).
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Definition of a function...
+
+%fof(funcdef,axiom,function(X)<=>(![Y]:(member(Y,X)=>?[W]:?[Z]:(Y=ordered_pair(W,Z)))))
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% HERE BE DRAGONS
+% Cross Product
+
+fof(cross_product_defn,axiom,
+    ( ! [U,V,X,Y] :
+        ( member(ordered_pair(U,V),cross_product(X,Y))
+      <=> ( member(U,X)
+          & member(V,Y) ) ) )).
+          
+% First and Second
+
+fof(first_second,axiom,
+    ! [X,Y] :
+      (first(ordered_pair(X,Y)) = X
+        & second(ordered_pair(X,Y)) = Y ) ).
+
+% Composition
+
+fof(compose_defn2,axiom,
+    ( ! [XR,YR,U,V] :
+        ( member(ordered_pair(U,V),compose(YR,XR))
+      <=> member(V,image(YR,image(XR,singleton(U))) ) ) )).
+
+% Domain Of
+
+fof(domain_of,axiom,
+    ( ! [X,Z] :
+        ( member(Z,domain_of(X))
+      <=> (?[Y]:(member(Y,X) & Z=first(Y)) ) )) 
+      ).
+      
+% Range Of
+      
+fof(range_of,axiom,
+    ( ! [X,Z] :
+        ( member(Z,range_of(X))
+      <=> (?[Y]:(member(Y,X) & Z=second(Y)) ) ))
+      ).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+fof(strict_order,axiom,(
+    ! [R,E] :
+      ( strict_order(R,E)
+    <=> ( ( ! [X,Y] :
+            ( ( member(X,E)
+              & member(Y,E) )
+           => ~ ( member(ordered_pair(X,Y),R )
+                & member(ordered_pair(Y,X),R ) )))
+        & ! [X,Y,Z] :
+            ( ( member(X,E)
+              & member(Y,E)
+              & member(Z,E) )
+           => ( ( member(ordered_pair(X,Y),R )
+                & member(ordered_pair(Y,Z),R ) )
+             => member(ordered_pair(X,Z),R ) ) ) ) ) )).
+
+fof(least,axiom,(
+    ! [R,E,M] :
+      ( least(M,R,E)
+    <=> ( member(M,E)
+        & ! [X] :
+            ( member(X,E)
+           => ( M = X
+              | member(ordered_pair(M,X),R ) ) ) ) ))).
+
+fof(strict_well_order,axiom,(
+    ! [R,E] :
+      ( strict_well_order(R,E)
+    <=> ( strict_order(R,E)
+        & ! [A] :
+            ( ( subclass(A,E)
+              & ? [X] : member(X,A) )
+           => ? [Y] : least(Y,R,A) ) ) ) )).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Test Conjecture
+/*
+fof(test,conjecture,![X]:(member(X,omega)=>member(successor(X),omega))).
+*/
