@@ -1442,7 +1442,7 @@ Clause_p ProcessClause(ProofState_p state, ProofControl_p control,
    }
    
    //EvalListPrintComment(GlobalOut, clause->evaluations); printf("\n");
-   if(OutputLevel==1)
+   if (OutputLevel == 1)
    {
       putc('#', GlobalOut);
    }
@@ -1452,71 +1452,56 @@ Clause_p ProcessClause(ProofState_p state, ProofControl_p control,
    ClauseRemoveEvaluations(clause);
    // Orphans have been excluded during selection now
    
-   if ((ProofStateProcCardinality(state) > 0) && (ProofStateProcCardinality(state) % 100 == 0))
+   if ((ProofStateProcCardinality(state) > 0) && (state->processed_count % 100 == 0))
    {
 		printf("Unprocessed: %ld ProofStateProcCardinality: %ld\n", 
 						state->unprocessed->members, 
 						ProofStateProcCardinality(state));
-		//ProofStatePrint(GlobalOut, state);
 		printf("## Attempting to build APR Graph... there are %ld axioms and %ld unprocessed\n", 
 						state->axioms->members, 
 						state->unprocessed->members);
-		//ClauseSetInsertSet(state->unprocessed, state->axioms);
 		printf("## Axioms remaining: %ld\n", state->axioms->members);
-		//ClauseSetPrint(GlobalOut, state->axioms, true);
 		printf("## There are %ld clauses being used to create the graph.\n", state->unprocessed->members);
-		//ClauseSetPrint(GlobalOut, state->unprocessed, true);
 		APRControl_p apr_control = APRBuildGraph(state->unprocessed);
 		APRGraphAddClauses(apr_control, state->axioms);
 		printf("## Successfully built APR graph.\n");
-		//int num_in_graph = APRGraphAddClauses(apr_control, state->unprocessed);
 		printf("## Number of unprocessed: %ld\n", state->unprocessed->members);
-		//printf("## Number of unprocessed without a value in the intmap (has no bucket): %d\n", num_in_graph);
 		printf("## Attempting to find relevance of axioms in unprocessed\n");
-		//int relevance_distance = 1;
 		long last_number_of_relevant = 0;
-		//for (int relevance_distance = 1; relevance_distance < 10; relevance_distance++)
-		//{
-		PStack_p relevant = APRRelevance(apr_control, state->axioms, 3);
-		printf("## %ld relevant unprocessed clauses found at relevance %d.\n", PStackGetSP(relevant), 3);
-		/*
-		if (last_number_of_relevant == PStackGetSP(relevant))
-		{
-			if (last_number_of_relevant != state->axioms->members)
-			{
-				break;
-			}
-		}
-		*/
+		PStack_p relevant = APRRelevance(apr_control, state->axioms, 6);
 		if (state->unprocessed->members == 0)
 		{
 			printf("Error: No more unprocessed clauses 1.\n");
+			exit(0);
 		}
+		assert(state->axioms->members > 0);
 		ClauseSet_p new_relevant = ClauseSetAlloc();
 		for (PStackPointer p = 0; p < PStackGetSP(relevant); p++)
 		{
-			Clause_p relevant_clause = PStackElementP(relevant, p);
-			if (clause->set != state->axioms)
+			Clause_p relevant_clause = PStackPopP(relevant);
+			if (relevant_clause->set != state->axioms)
 			{
-					ClauseSetMoveClause(new_relevant, relevant_clause);
+				ClauseSetMoveClause(new_relevant, relevant_clause);
+			}
+			else
+			{
+				//printf("# Relevant, but is axiom\n");
 			}
 		}
-		if (state->unprocessed->members == 0)
+		printf("## %ld relevant nonaxiom unprocessed clauses found at relevance %d.\n", new_relevant->members, 6);
+		assert(state->axioms->members > 0);
+		if (new_relevant->members == 0)
 		{
-			printf("Error: No more unprocessed clauses 2.\n");
+			printf("# Problem: No more relevant clauses.\n");
+			ClauseSetFree(new_relevant);
+			//exit(0);
 		}
-		last_number_of_relevant = PStackGetSP(relevant);
-		ClauseSetFree(state->unprocessed);
-		state->unprocessed = new_relevant;
-		//for (PStackPointer p = 0; p < PStackGetSP(relevant); p++)
-		//{
-			//printf("# APR relevant:  ");
-			//ClausePrint(GlobalOut, PStackElementP(relevant, p), true);
-			//printf("\n");
-		//}
-			
+		else
+		{
+			ClauseSetFree(state->unprocessed);
+			state->unprocessed = new_relevant;
+		}
 		PStackFree(relevant);
-		//}
 	}
 	
    ClauseSetProp(clause, CPIsProcessed);
