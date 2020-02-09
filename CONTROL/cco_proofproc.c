@@ -1490,6 +1490,7 @@ Clause_p ProcessClause(ProofState_p state, ProofControl_p control,
 		}
 		printf("## %ld relevant nonaxiom unprocessed clauses found at relevance %d.\n", new_relevant->members, 6);
 		assert(state->axioms->members > 0);
+		APRControlFree(apr_control);
 		if (new_relevant->members == 0)
 		{
 			printf("# Problem: No more relevant clauses.\n");

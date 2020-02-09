@@ -541,8 +541,20 @@ APRControl_p APRControlAlloc()
 void APRControlFree(APRControl_p trash)
 {
 	IntMapFree(trash->map);
+	PStack_p trash_bucket = NULL;
+	while (!PStackEmpty(trash->buckets))
+	{
+		trash_bucket = PStackPopP(trash->buckets);
+		PStackFree(trash_bucket);
+	}
 	assert(PStackEmpty(trash->buckets));
 	PStackFree(trash->buckets);
+	APR_p trash_node = NULL;
+	while (!PStackEmpty(trash->graph_nodes))
+	{
+		trash_node = PStackPopP(trash->graph_nodes);
+		APRFree(trash_node);
+	}
 	assert(PStackEmpty(trash->graph_nodes));
 	PStackFree(trash->graph_nodes);
 	
