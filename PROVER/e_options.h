@@ -180,6 +180,7 @@ typedef enum
    OPT_MINISCOPE_LIMIT,
    OPT_PRINT_TYPES,
    OPT_APP_ENCODE,
+   OPT_ALTERN_PATH_REL,
    OPT_DUMMY
 }OptionCodes;
 
@@ -1360,6 +1361,13 @@ OptCell opts[] =
     NoArg, NULL,
     "Encodes terms in the proof state using applicative encoding, "
     "prints encoded input problem and exits."},
+    
+   {OPT_ALTERN_PATH_REL,
+    '\0', "alternating-path-relevance",
+    OptArg, "3",
+    "Create an alternating path relevance graph from the axioms. "
+    "The integer argument specifies the distance used to create an APR "
+    "neighborhood of the conjectures.  Default value is 3."},
 
    {OPT_NOOPT,
     '\0', NULL,

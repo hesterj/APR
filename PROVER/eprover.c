@@ -73,7 +73,8 @@ bool              print_sat = false,
    incomplete = false,
    conjectures_are_questions = false,
    app_encode = false,
-   strategy_scheduling = false;
+   strategy_scheduling = false,
+   apr_relevant = false;
 ProofOutput       print_derivation = PONone;
 long              proc_training_data;
 
@@ -90,7 +91,8 @@ long              step_limit = LONG_MAX,
 long long tb_insert_limit = LLONG_MAX;
 
 int eqdef_incrlimit = DEFAULT_EQDEF_INCRLIMIT,
-   force_deriv_output = 0;
+   force_deriv_output = 0,
+   apr_relevance_limit = 0;
 char              *outdesc = DEFAULT_OUTPUT_DESCRIPTOR,
    *filterdesc = DEFAULT_FILTER_DESCRIPTOR;
 PStack_p          wfcb_definitions, hcb_definitions;
@@ -489,6 +491,11 @@ int main(int argc, char* argv[])
                                             eqdef_incrlimit,
                                             eqdef_maxclauses);
    }
+   
+   if (apr_relevant)
+   {
+		APRProofStateProcess(proofstate, apr_relevance_limit);
+	}
 
    proofcontrol = ProofControlAlloc();
    ProofControlInit(proofstate, proofcontrol, h_parms,
@@ -506,7 +513,6 @@ int main(int argc, char* argv[])
    ProofStateInit(proofstate, proofcontrol);
    //printf("Alive (2)!\n");
    //ProofStateInitWatchlist(proofstate, proofcontrol->ocb);
-
 
    VERBOUT2("Prover state initialized\n");
    preproc_time = GetTotalCPUTime();
@@ -869,6 +875,10 @@ CLState_p process_options(int argc, char* argv[])
       case OPT_VERBOSE:
             Verbose = CLStateGetIntArg(handle, arg);
             break;
+      case OPT_ALTERN_PATH_REL:
+				apr_relevant = true;
+				apr_relevance_limit = CLStateGetIntArg(handle, arg);
+				break;
       case OPT_HELP:
             print_help(stdout);
             exit(NO_ERROR);

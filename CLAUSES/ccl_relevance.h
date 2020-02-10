@@ -110,10 +110,17 @@ void APRControlFree(APRControl_p trash);
 bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b);
 APRControl_p APRBuildGraph(ClauseSet_p clauses);
 int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses);
+int APRGraphAddClausesList(APRControl_p control, PList_p clauses);
 bool APRGraphAddNodes(APRControl_p control, Clause_p clause);
 long APRGraphUpdateEdges(APRControl_p control);
 int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses, int relevance);
 PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance);
+
+PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance);
+PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance);
+
+void APRProofStateProcess(ProofState_p proofstate, int relevance);
+ClauseSet_p EqualityAxioms(TB_p bank);
 
 #endif
 

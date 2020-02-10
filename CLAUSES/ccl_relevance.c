@@ -708,6 +708,37 @@ int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses)
 	num_edges = APRGraphUpdateEdges(control);
 	return num_added;
 }
+
+/*  Return number of clauses added to the APR graph
+ * 
+*/
+int APRGraphAddClausesList(APRControl_p control, PList_p clauses)
+{
+	IntMap_p map = control->map;
+	int num_added = 0;
+	PList_p anchor = clauses;
+	PList_p handle = clauses->succ;
+	while (handle != anchor)
+	{
+		Clause_p handle_clause = handle->key.p_val;
+		long handle_ident = handle_clause->ident;
+		if (handle_ident < 0)
+		{
+			handle_ident = handle_ident - LONG_MIN;
+		}
+		if (IntMapGetVal(map, handle_ident) == NULL)
+		{
+			APRGraphAddNodes(control, handle_clause);
+			num_added++;
+			// Add the clause to the graph
+		}
+		handle = handle->succ;
+	}
+	long num_edges = 0;
+	num_edges = APRGraphUpdateEdges(control);
+	return num_added;
+}
+
 /*
  * Return true if clause is already in the graph, false, otherwise.
  * If it is not in the graph, add it.
@@ -749,7 +780,8 @@ bool APRGraphAddNodes(APRControl_p control, Clause_p clause)
 
 /* Collect the clauses that are within relevance distance of set.
  * Uses the APR graph specified by the APRControl_p
- *  
+ * Set must be added to the APR graph specified by control
+ * by the method APRGraphAddClauses
 */
 
 PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance)
@@ -797,7 +829,8 @@ PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance)
 
 int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses, int relevance)
 {	
-	PStack_p temp = PStackAlloc();
+	//PStack_p temp = PStackAlloc();
+	PTree_p temp = NULL;
 	int num_clauses_found = 0;
 	for (PStackPointer p=0; p<PStackGetSP(nodes); p++)
 	{
@@ -812,26 +845,193 @@ int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses
 		{
 			num_clauses_found++;
 		}
+		//printf("edges: %ld relevance: %d\n", PStackGetSP(edges), relevance);
 		for (PStackPointer r=0; r<PStackGetSP(edges); r++)
 		{
 			APR_p new_node = PStackElementP(edges, r);
 			assert(new_node);
-			PStackPushP(temp, new_node);
+			//PStackPushP(temp, new_node);
+			PTreeStore(&temp, new_node);
 		}
 	}
 	PStackReset(nodes);
-	for (PStackPointer q=0; q<PStackGetSP(temp); q++)
+	PStack_p temp_stack = PStackAlloc();
+	PTreeToPStack(temp_stack, temp);
+	//printf("temp: %ld nodes: %ld relevance: %d\n", PStackGetSP(temp_stack), PStackGetSP(nodes), relevance);
+	for (PStackPointer q=0; q<PStackGetSP(temp_stack); q++)
 	{
-		APR_p temp_node = PStackElementP(temp, q);
+		APR_p temp_node = PStackElementP(temp_stack, q);
 		assert(temp_node);
 		PStackPushP(nodes, temp_node);
 	}
-	PStackFree(temp);
+	PStackFree(temp_stack);
+	PTreeFree(temp);
 	if (relevance != 0)
 	{
 		num_clauses_found += APRBreadthFirstSearch(control, nodes, clauses, relevance - 1);
 	}
 	return num_clauses_found;
+}
+
+/* From the APR graph specified by control, find the clauses within relevance distance
+ * of a clause from the list.  Does not add the clauses of list to the graph-
+ * to find any relevant clauses they must be added to the graph with
+ * APRGraphAddClauses.
+ *
+*/
+
+PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
+{
+	assert(relevance);
+	assert(control);
+	assert(list);
+	IntMap_p map = control->map;
+	int search_distance = (2*relevance) - 2;
+	PStack_p handle_bucket = NULL;
+	PStack_p starting_nodes = PStackAlloc();
+	
+	PList_p anchor = list;
+	PList_p list_handle = anchor->succ;
+	int list_counter = 0;
+	while (list_handle != anchor)
+	{
+		list_counter++;
+		Clause_p handle = list_handle->key.p_val;
+		//printf("# List clause: ");ClausePrint(GlobalOut, handle, true);printf("\n");
+		long handle_ident = handle->ident;
+		if (handle_ident < 0)
+		{
+			handle_ident = handle_ident - LONG_MIN;
+		}
+		handle_bucket = IntMapGetVal(map, handle_ident);
+		//printf("%p\n", handle_bucket);
+		assert(handle_bucket);
+		for (PStackPointer p = 0; p < PStackGetSP(handle_bucket); p++)
+		{
+			APR_p handle_node = PStackElementP(handle_bucket, p);
+			assert(handle_node);
+			if (handle_node->type == 2)
+			{
+				//printf("# Found type 2 node with %ld edges\n", PStackGetSP(handle_node->edges));
+				PStackPushP(starting_nodes, handle_node);
+			}
+		}
+		list_handle = list_handle->succ;
+	}
+	printf("# %ld nodes corresponding to list of length %d found.\n", PStackGetSP(starting_nodes), list_counter);
+	PTree_p clause_tree = NULL;
+	int num_found = APRBreadthFirstSearch(control, starting_nodes, &clause_tree, search_distance);
+	printf("# %d relevant clauses found.\n", num_found);
+	PStack_p res = PStackAlloc();
+	PTreeToPStack(res, clause_tree);
+	PStackFree(starting_nodes);
+	PTreeFree(clause_tree);
+	return res;
+}
+
+/*
+ *  Return a stack of clauses from set that are within relevance
+ *  distance of clauses from list.
+ *  The clauses of list must be members of set.
+ * 
+*/
+
+PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance)
+{
+	printf("Building APR graph from %ld clauses.\n", set->members);
+	APRControl_p control = APRBuildGraph(set);
+	ClauseSet_p equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank);
+	APRGraphAddClauses(control, equality_axioms);
+	//int num_list = APRGraphAddClausesList(control, list);
+	PStack_p relevant = APRRelevanceList(control, list, relevance);
+	PStack_p relevant_without_equality_axs = PStackAlloc();
+	for (PStackPointer p=0 ; p<PStackGetSP(relevant); p++)
+	{
+		Clause_p relevant_clause = PStackElementP(relevant, p);
+		if (relevant_clause->set != equality_axioms)
+		{
+			PStackPushP(relevant_without_equality_axs, relevant_clause);
+		}
+	}
+	ClauseSetFree(equality_axioms);
+	PStackFree(relevant);
+	APRControlFree(control);
+	return relevant_without_equality_axs;
+}
+
+void APRProofStateProcess(ProofState_p proofstate, int relevance)
+{
+	printf("# Alternating path relevance distance: %d\n", relevance);
+	PList_p conjectures = PListAlloc();
+	PList_p non_conjectures = PListAlloc();
+	ClauseSetSplitConjectures(proofstate->axioms, 
+									  conjectures, 
+									  non_conjectures);
+	PListFree(non_conjectures);
+	if (!PListEmpty(conjectures))
+	{
+		PStack_p relevant = APRRelevanceNeighborhood(proofstate->axioms,
+																	conjectures,
+																	relevance);
+		ClauseSet_p relevant_set = ClauseSetAlloc();
+		for (PStackPointer p=0; p<PStackGetSP(relevant); p++)
+		{
+			ClauseSetMoveClause(relevant_set, PStackElementP(relevant, p));
+		}
+		ClauseSetFreeClauses(proofstate->axioms);
+		ClauseSetFree(proofstate->axioms);
+		proofstate->axioms = relevant_set;
+		PStackFree(relevant);
+	}
+	PListFree(conjectures);
+}
+
+ClauseSet_p EqualityAxioms(TB_p bank)
+{
+	//Clause_p symmetry
+	Type_p i_type = bank->sig->type_bank->i_type;
+	Term_p x = VarBankVarAssertAlloc(bank->vars, -2, i_type);
+	Term_p y = VarBankVarAssertAlloc(bank->vars, -4, i_type);
+	Term_p z = VarBankVarAssertAlloc(bank->vars, -6, i_type);
+	ClauseSet_p equality_axioms = ClauseSetAlloc();
+	
+	Eqn_p x_equals_x = EqnAlloc(x, x, bank, true);
+	Clause_p clause1 = ClauseAlloc(x_equals_x);
+	ClauseRecomputeLitCounts(clause1);
+	//printf("clause 1: %d\n", ClauseLiteralNumber(clause1));
+	//ClausePrint(GlobalOut, clause1, true);
+	ClauseSetInsert(equality_axioms, clause1);
+	
+	Eqn_p y_equals_x = EqnAlloc(y, x, bank, true);
+	Eqn_p x_neq_y = EqnAlloc(x, y, bank, false);
+	EqnListAppend(&y_equals_x, x_neq_y);
+	Clause_p clause2 = ClauseAlloc(y_equals_x);
+	ClauseRecomputeLitCounts(clause2);
+	//printf("clause 2: %d\n", ClauseLiteralNumber(clause2));
+	//ClausePrint(GlobalOut, clause2, true);
+	ClauseSetInsert(equality_axioms, clause2);
+	
+	Eqn_p x_equals_y = EqnAlloc(x, y, bank, true);
+	Eqn_p y_neq_x = EqnAlloc(y, x, bank, false);
+	EqnListAppend(&x_equals_y, y_neq_x);
+	Clause_p clause3 = ClauseAlloc(x_equals_y);
+	ClauseRecomputeLitCounts(clause2);
+	//printf("clause 3: %d\n", ClauseLiteralNumber(clause3));
+	//ClausePrint(GlobalOut, clause3, true);
+	ClauseSetInsert(equality_axioms, clause3);
+	
+	Eqn_p x_equals_z = EqnAlloc(x, z, bank, true);
+	x_neq_y = EqnAlloc(x, y, bank, false);
+	Eqn_p y_neq_z = EqnAlloc(y, z, bank, false);
+	EqnListAppend(&x_equals_z, x_neq_y);
+	EqnListAppend(&x_equals_z, y_neq_z);
+	Clause_p clause4 = ClauseAlloc(x_equals_z);
+	ClauseRecomputeLitCounts(clause4);
+	//printf("clause 4: %d\n", ClauseLiteralNumber(clause4));
+	//ClausePrint(GlobalOut, clause4, true);
+	ClauseSetInsert(equality_axioms, clause4);
+	
+	return equality_axioms;
 }
 
 /*---------------------------------------------------------------------*/
