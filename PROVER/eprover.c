@@ -495,6 +495,7 @@ int main(int argc, char* argv[])
    if (apr_relevant)
    {
 		APRProofStateProcess(proofstate, apr_relevance_limit);
+		assert(proofstate->axioms->members > 0);
 	}
 
    proofcontrol = ProofControlAlloc();

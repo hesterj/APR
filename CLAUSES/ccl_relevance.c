@@ -973,14 +973,20 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 		PStack_p relevant = APRRelevanceNeighborhood(proofstate->axioms,
 																	conjectures,
 																	relevance);
+		printf("# Relevant axioms after removing equality axs: %ld\n", PStackGetSP(relevant));
 		ClauseSet_p relevant_set = ClauseSetAlloc();
 		for (PStackPointer p=0; p<PStackGetSP(relevant); p++)
 		{
-			ClauseSetMoveClause(relevant_set, PStackElementP(relevant, p));
+			Clause_p relevant_clause = PStackElementP(relevant, p);
+			assert(relevant_clause);
+			ClauseSetMoveClause(relevant_set, relevant_clause);
 		}
-		ClauseSetFreeClauses(proofstate->axioms);
+		printf("# Remaining (irrelevant) axioms: %ld\n", proofstate->axioms->members);
 		ClauseSetFree(proofstate->axioms);
 		proofstate->axioms = relevant_set;
+		printf("# New axioms:\n");
+		ClauseSetPrint(GlobalOut, proofstate->axioms, true);
+		assert(proofstate->axioms->members > 0);
 		PStackFree(relevant);
 	}
 	PListFree(conjectures);
