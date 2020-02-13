@@ -828,6 +828,13 @@ PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance)
 	return res;
 }
 
+/*  Poorly written breadth first search that searches through all edges
+ *  connected to elements of nodes.  Clauses corresponding to discovered
+ *  nodes are added to the PTree of clauses.  When relevance reaches 0,
+ *  the search terminates and returns the tree of clauses.
+ * 
+*/
+
 int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses, int relevance)
 {	
 	//PStack_p temp = PStackAlloc();
@@ -897,6 +904,8 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 	PList_p anchor = list;
 	PList_p list_handle = anchor->succ;
 	int list_counter = 0;
+	// Add the nodes corresponding to the clauses of list
+	// to the collection of starting nodes
 	while (list_handle != anchor)
 	{
 		list_counter++;
@@ -936,22 +945,38 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 /*
  *  Return a stack of clauses from set that are within relevance
  *  distance of clauses from list.
- *  The clauses of list must be members of set.
+ *  The clauses of list must be members of set,
+ *  or added to the graph corresponding to control by changing 
+ *  this method.
  * 
 */
 
 PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance)
 {
-	//printf("Building APR graph from %ld clauses.\n", set->members);
 	APRControl_p control = APRBuildGraph(set);
 	ClauseSet_p equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank);
 	APRGraphAddClauses(control, equality_axioms);
-	//int num_list = APRGraphAddClausesList(control, list);
 	PStack_p relevant = APRRelevanceList(control, list, relevance);
 	PStack_p relevant_without_equality_axs = PStackAlloc();
 	for (PStackPointer p=0 ; p<PStackGetSP(relevant); p++)
 	{
 		Clause_p relevant_clause = PStackElementP(relevant, p);
+		//~ PStack_p relevant_nodes = IntMapGetVal(control->map, relevant_clause->ident - LONG_MIN);
+		//~ if (relevant_clause->set == equality_axioms)
+		//~ {
+			//~ printf("E ");
+		//~ }
+		//~ else
+		//~ {
+			//~ printf("C ");
+		//~ }
+		//~ ClausePrint(GlobalOut, relevant_clause, true);printf("\n");
+		//~ for (PStackPointer r = 0; r < PStackGetSP(relevant_nodes); r++)
+		//~ {
+			//~ APR_p node = PStackElementP(relevant_nodes, r);
+			//~ printf("%d:%ld ", node->type, PStackGetSP(node->edges));
+		//~ }
+		//~ printf("\n");
 		if (relevant_clause->set != equality_axioms)
 		{
 			PStackPushP(relevant_without_equality_axs, relevant_clause);
@@ -962,6 +987,10 @@ PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance)
 	APRControlFree(control);
 	return relevant_without_equality_axs;
 }
+
+/*  Removes axioms from proofstate that are not relevant to
+ *  conjectures.  Deletes the original clauseset of axioms
+*/
 
 void APRProofStateProcess(ProofState_p proofstate, int relevance)
 {
@@ -974,14 +1003,6 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 	PListFree(non_conjectures);
 	if (!PListEmpty(conjectures))
 	{
-		//PList_p check_list = conjectures->succ;
-		//while (check_list != conjectures)
-		//{
-			//Clause_p check_clause = check_list->key.p_val;
-			//printf("Check clause: ");ClausePrint(GlobalOut, check_clause, true);printf("\n");
-			//check_list = check_list->succ;
-		//}
-		
 		PStack_p relevant = APRRelevanceNeighborhood(proofstate->axioms,
 																	conjectures,
 																	relevance);
@@ -999,14 +1020,8 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 			assert(relevant_clause);
 			ClauseSetMoveClause(relevant_set, relevant_clause);
 		}
-		//printf("# Remaining (irrelevant) axioms: %ld\n", proofstate->axioms->members);
-		//ClauseSetPrint(GlobalOut, proofstate->axioms, true);
-		//printf("# Moving irrelevant clauses to relevant set to ensure everything is pointless\n");
-		//ClauseSetInsertSet(relevant_set, proofstate->axioms);
 		ClauseSetFree(proofstate->axioms);
 		proofstate->axioms = relevant_set;
-		//printf("# New axioms: %ld\n", proofstate->axioms->members);
-		//ClauseSetPrint(GlobalOut, proofstate->axioms, true);
 		assert(proofstate->axioms->members > 0);
 		PStackFree(relevant);
 	}
@@ -1015,50 +1030,50 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 
 ClauseSet_p EqualityAxioms(TB_p bank)
 {
-	//Clause_p symmetry
+	//Setup
 	Type_p i_type = bank->sig->type_bank->i_type;
-	//Term_p x = VarBankVarAssertAlloc(bank->vars, -2, i_type);
 	Term_p x = VarBankGetFreshVar(bank->vars, i_type);
 	Term_p y = VarBankGetFreshVar(bank->vars, i_type);
 	Term_p z = VarBankGetFreshVar(bank->vars, i_type);
-	//Term_p y = VarBankVarAssertAlloc(bank->vars, -4, i_type);
-	//Term_p z = VarBankVarAssertAlloc(bank->vars, -6, i_type);
 	ClauseSet_p equality_axioms = ClauseSetAlloc();
 	
+	// Reflexivity
+	/*
 	Eqn_p x_equals_x = EqnAlloc(x, x, bank, true);
 	Clause_p clause1 = ClauseAlloc(x_equals_x);
 	ClauseRecomputeLitCounts(clause1);
-	//printf("clause 1: %d\n", ClauseLiteralNumber(clause1));
-	//ClausePrint(GlobalOut, clause1, true);
 	ClauseSetInsert(equality_axioms, clause1);
+	*/
 	
+	// Symmetry clause 1
+	/*
 	Eqn_p y_equals_x = EqnAlloc(y, x, bank, true);
 	Eqn_p x_neq_y = EqnAlloc(x, y, bank, false);
 	EqnListAppend(&y_equals_x, x_neq_y);
 	Clause_p clause2 = ClauseAlloc(y_equals_x);
 	ClauseRecomputeLitCounts(clause2);
-	//printf("clause 2: %d\n", ClauseLiteralNumber(clause2));
-	//ClausePrint(GlobalOut, clause2, true);
 	ClauseSetInsert(equality_axioms, clause2);
+	*/
 	
+	
+	// Symmetry clause 2
+	/*
 	Eqn_p x_equals_y = EqnAlloc(x, y, bank, true);
 	Eqn_p y_neq_x = EqnAlloc(y, x, bank, false);
 	EqnListAppend(&x_equals_y, y_neq_x);
 	Clause_p clause3 = ClauseAlloc(x_equals_y);
 	ClauseRecomputeLitCounts(clause2);
-	//printf("clause 3: %d\n", ClauseLiteralNumber(clause3));
-	//ClausePrint(GlobalOut, clause3, true);
 	ClauseSetInsert(equality_axioms, clause3);
+	*/
 	
+	// Transitivity
 	Eqn_p x_equals_z = EqnAlloc(x, z, bank, true);
-	x_neq_y = EqnAlloc(x, y, bank, false);
+	Eqn_p x_neq_y2 = EqnAlloc(x, y, bank, false);
 	Eqn_p y_neq_z = EqnAlloc(y, z, bank, false);
-	EqnListAppend(&x_equals_z, x_neq_y);
+	EqnListAppend(&x_equals_z, x_neq_y2);
 	EqnListAppend(&x_equals_z, y_neq_z);
 	Clause_p clause4 = ClauseAlloc(x_equals_z);
 	ClauseRecomputeLitCounts(clause4);
-	//printf("clause 4: %d\n", ClauseLiteralNumber(clause4));
-	//ClausePrint(GlobalOut, clause4, true);
 	ClauseSetInsert(equality_axioms, clause4);
 	
 	return equality_axioms;
