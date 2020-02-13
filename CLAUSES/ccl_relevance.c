@@ -676,8 +676,9 @@ bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b)
 	if (EqnIsPositive(a) && EqnIsPositive(b)) return false;
 	if (EqnIsNegative(a) && EqnIsNegative(b)) return false;
 	
-	bool res = EqnUnifyP(a, b);
-	
+	Eqn_p a_disj = EqnCopyDisjoint(a);
+	bool res = EqnUnifyP(a_disj, b);
+	EqnFree(a_disj);
 	return res;
 }
 
@@ -843,9 +844,9 @@ int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses
 		bool clause_added = PTreeStore(clauses, node_clause);
 		if (clause_added)
 		{
-			printf("# Relevant clause found in BFS: ");
-			ClausePrint(GlobalOut, node_clause, true);
-			printf("\n");
+			//printf("# Relevant clause found in BFS: ");
+			//ClausePrint(GlobalOut, node_clause, true);
+			//printf("\n");
 			num_clauses_found++;
 		}
 		//printf("edges: %ld relevance: %d\n", PStackGetSP(edges), relevance);
@@ -921,10 +922,10 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 		}
 		list_handle = list_handle->succ;
 	}
-	printf("# %ld nodes corresponding to list of length %d found.\n", PStackGetSP(starting_nodes), list_counter);
+	//printf("# %ld nodes corresponding to list of length %d found.\n", PStackGetSP(starting_nodes), list_counter);
 	PTree_p clause_tree = NULL;
 	int num_found = APRBreadthFirstSearch(control, starting_nodes, &clause_tree, search_distance);
-	printf("# %d relevant clauses found.\n", num_found);
+	//printf("# %d relevant clauses found.\n", num_found);
 	PStack_p res = PStackAlloc();
 	PTreeToPStack(res, clause_tree);
 	PStackFree(starting_nodes);
@@ -941,7 +942,7 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 
 PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance)
 {
-	printf("Building APR graph from %ld clauses.\n", set->members);
+	//printf("Building APR graph from %ld clauses.\n", set->members);
 	APRControl_p control = APRBuildGraph(set);
 	ClauseSet_p equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank);
 	APRGraphAddClauses(control, equality_axioms);
@@ -964,7 +965,7 @@ PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance)
 
 void APRProofStateProcess(ProofState_p proofstate, int relevance)
 {
-	printf("# Alternating path relevance distance: %d\n", relevance);
+	//printf("# Alternating path relevance distance: %d\n", relevance);
 	PList_p conjectures = PListAlloc();
 	PList_p non_conjectures = PListAlloc();
 	ClauseSetSplitConjectures(proofstate->axioms, 
@@ -984,7 +985,13 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 		PStack_p relevant = APRRelevanceNeighborhood(proofstate->axioms,
 																	conjectures,
 																	relevance);
-		printf("# Relevant axioms after removing equality axs: %ld\n", PStackGetSP(relevant));
+		printf("# Relevant axioms at relevance distance %d: %ld of %ld\n", relevance, 
+																								 PStackGetSP(relevant), 
+																								 proofstate->axioms->members);
+		if (PStackGetSP(relevant) < proofstate->axioms->members)
+		{
+			proofstate->state_is_complete = false;
+		}
 		ClauseSet_p relevant_set = ClauseSetAlloc();
 		for (PStackPointer p=0; p<PStackGetSP(relevant); p++)
 		{
@@ -992,18 +999,16 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 			assert(relevant_clause);
 			ClauseSetMoveClause(relevant_set, relevant_clause);
 		}
-		printf("# Remaining (irrelevant) axioms: %ld\n", proofstate->axioms->members);
-		ClauseSetPrint(GlobalOut, proofstate->axioms, true);
+		//printf("# Remaining (irrelevant) axioms: %ld\n", proofstate->axioms->members);
+		//ClauseSetPrint(GlobalOut, proofstate->axioms, true);
+		//printf("# Moving irrelevant clauses to relevant set to ensure everything is pointless\n");
+		//ClauseSetInsertSet(relevant_set, proofstate->axioms);
 		ClauseSetFree(proofstate->axioms);
 		proofstate->axioms = relevant_set;
-		printf("# New axioms:\n");
-		ClauseSetPrint(GlobalOut, proofstate->axioms, true);
+		//printf("# New axioms: %ld\n", proofstate->axioms->members);
+		//ClauseSetPrint(GlobalOut, proofstate->axioms, true);
 		assert(proofstate->axioms->members > 0);
 		PStackFree(relevant);
-	}
-	else
-	{
-		printf("# Conjectures list empty\n");
 	}
 	PListFree(conjectures);
 }
@@ -1012,9 +1017,12 @@ ClauseSet_p EqualityAxioms(TB_p bank)
 {
 	//Clause_p symmetry
 	Type_p i_type = bank->sig->type_bank->i_type;
-	Term_p x = VarBankVarAssertAlloc(bank->vars, -2, i_type);
-	Term_p y = VarBankVarAssertAlloc(bank->vars, -4, i_type);
-	Term_p z = VarBankVarAssertAlloc(bank->vars, -6, i_type);
+	//Term_p x = VarBankVarAssertAlloc(bank->vars, -2, i_type);
+	Term_p x = VarBankGetFreshVar(bank->vars, i_type);
+	Term_p y = VarBankGetFreshVar(bank->vars, i_type);
+	Term_p z = VarBankGetFreshVar(bank->vars, i_type);
+	//Term_p y = VarBankVarAssertAlloc(bank->vars, -4, i_type);
+	//Term_p z = VarBankVarAssertAlloc(bank->vars, -6, i_type);
 	ClauseSet_p equality_axioms = ClauseSetAlloc();
 	
 	Eqn_p x_equals_x = EqnAlloc(x, x, bank, true);
