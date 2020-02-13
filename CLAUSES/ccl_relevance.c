@@ -843,6 +843,9 @@ int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses
 		bool clause_added = PTreeStore(clauses, node_clause);
 		if (clause_added)
 		{
+			printf("# Relevant clause found in BFS: ");
+			ClausePrint(GlobalOut, node_clause, true);
+			printf("\n");
 			num_clauses_found++;
 		}
 		//printf("edges: %ld relevance: %d\n", PStackGetSP(edges), relevance);
@@ -970,6 +973,14 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 	PListFree(non_conjectures);
 	if (!PListEmpty(conjectures))
 	{
+		//PList_p check_list = conjectures->succ;
+		//while (check_list != conjectures)
+		//{
+			//Clause_p check_clause = check_list->key.p_val;
+			//printf("Check clause: ");ClausePrint(GlobalOut, check_clause, true);printf("\n");
+			//check_list = check_list->succ;
+		//}
+		
 		PStack_p relevant = APRRelevanceNeighborhood(proofstate->axioms,
 																	conjectures,
 																	relevance);
@@ -982,12 +993,17 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 			ClauseSetMoveClause(relevant_set, relevant_clause);
 		}
 		printf("# Remaining (irrelevant) axioms: %ld\n", proofstate->axioms->members);
+		ClauseSetPrint(GlobalOut, proofstate->axioms, true);
 		ClauseSetFree(proofstate->axioms);
 		proofstate->axioms = relevant_set;
 		printf("# New axioms:\n");
 		ClauseSetPrint(GlobalOut, proofstate->axioms, true);
 		assert(proofstate->axioms->members > 0);
 		PStackFree(relevant);
+	}
+	else
+	{
+		printf("# Conjectures list empty\n");
 	}
 	PListFree(conjectures);
 }

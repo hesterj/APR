@@ -473,9 +473,16 @@ int main(int argc, char* argv[])
    {
       VERBOUT("CNFization done\n");
    }
-
+   
+   if (apr_relevant)
+   {
+		APRProofStateProcess(proofstate, apr_relevance_limit);
+		assert(proofstate->axioms->members > 0);
+	}
+	
    raw_clause_no = proofstate->axioms->members;
    ProofStateLoadWatchlist(proofstate, watchlist_filename, parse_format);
+   
 
    if(!no_preproc)
    {
@@ -491,12 +498,6 @@ int main(int argc, char* argv[])
                                             eqdef_incrlimit,
                                             eqdef_maxclauses);
    }
-   
-   if (apr_relevant)
-   {
-		APRProofStateProcess(proofstate, apr_relevance_limit);
-		assert(proofstate->axioms->members > 0);
-	}
 
    proofcontrol = ProofControlAlloc();
    ProofControlInit(proofstate, proofcontrol, h_parms,
