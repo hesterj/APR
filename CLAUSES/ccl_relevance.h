@@ -29,6 +29,7 @@ Changes
 #include <clb_plist.h>
 #include <ccl_findex.h>
 #include <ccl_proofstate.h>
+#include <omp.h>
 
 /*---------------------------------------------------------------------*/
 /*                    Data type declarations                           */
@@ -89,6 +90,8 @@ typedef struct aprcontrolcell
 	IntMap_p map;
 	PStack_p buckets;
 	PStack_p graph_nodes;
+	PStack_p type1_nodes;
+	PStack_p type2_nodes;
 }APRControlCell, *APRControl_p;
 
 typedef struct aprcell
@@ -109,15 +112,23 @@ APRControl_p APRControlAlloc();
 void APRControlFree(APRControl_p trash);
 bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b);
 APRControl_p APRBuildGraph(ClauseSet_p clauses);
+PStack_p APRBuildGraphConjectures(ClauseSet_p clauses, PList_p conjectures, int distance);
 int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses);
 int APRGraphAddClausesList(APRControl_p control, PList_p clauses);
 bool APRGraphAddNodes(APRControl_p control, Clause_p clause);
 long APRGraphUpdateEdges(APRControl_p control);
+long APRGraphUpdateEdgesFromList(APRControl_p control, 
+											PTree_p *start_nodes, 
+											PTree_p *relevant, 
+											int distance);
 int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses, int relevance);
 PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance);
+PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list);
 
 PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance);
 PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance);
+
+int APRNodeCompareRef(const void *node1ref, const void* node2ref);
 
 void APRProofStateProcess(ProofState_p proofstate, int relevance);
 ClauseSet_p EqualityAxioms(TB_p bank);
