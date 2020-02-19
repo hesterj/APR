@@ -117,7 +117,8 @@ int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses);
 int APRGraphAddClausesList(APRControl_p control, PList_p clauses);
 bool APRGraphAddNodes(APRControl_p control, Clause_p clause);
 long APRGraphUpdateEdges(APRControl_p control);
-long APRGraphUpdateEdgesFromList(APRControl_p control, 
+long APRGraphUpdateEdgesFromList(APRControl_p control,
+											PTree_p *already_visited,
 											PTree_p *start_nodes, 
 											PTree_p *relevant, 
 											int distance);

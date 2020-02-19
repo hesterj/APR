@@ -613,18 +613,23 @@ PStack_p APRBuildGraphConjectures(ClauseSet_p clauses, PList_p conjectures, int 
 	// Add all possible edges from the conjecture nodes.
 	PTree_p relevant_tree = NULL;
 	PTree_p start_tree = NULL;
+	PTree_p already_visited = NULL;
 	PStack_p start_nodes = APRCollectNodesFromList(control, conjectures);
 	for (PStackPointer p = 0; p<PStackGetSP(start_nodes); p++)
 	{
 		PTreeStore(&start_tree, PStackElementP(start_nodes, p));
 	}
-   APRGraphUpdateEdgesFromList(control, &start_tree, &relevant_tree, distance);
+   APRGraphUpdateEdgesFromList(control, &already_visited,
+													 &start_tree, 
+													 &relevant_tree, 
+													 distance);
    printf("# Updated edges");
 	APRControlFree(control);
 	PStackFree(start_nodes);
 	PStack_p relevant = PStackAlloc();
 	PTreeToPStack(relevant, relevant_tree);
 	PTreeFree(start_tree);
+	PTreeFree(already_visited);
 	PTreeFree(relevant_tree);
 	return relevant;
 }
@@ -636,7 +641,8 @@ PStack_p APRBuildGraphConjectures(ClauseSet_p clauses, PList_p conjectures, int 
  * 
 */
 
-long APRGraphUpdateEdgesFromList(APRControl_p control, 
+long APRGraphUpdateEdgesFromList(APRControl_p control,
+											PTree_p *already_visited,
 											PTree_p *start_nodes, 
 											PTree_p *relevant, 
 											int distance)
@@ -656,6 +662,7 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 		APR_p current_node = PStackElementP(start_nodes_stack, graph_iterator);
 		Clause_p current_clause = current_node->clause;
 		PTreeStore(relevant, current_clause);
+		PTreeStore(already_visited, current_node);
 		Eqn_p current_literal = current_node->literal;
 		if (PStackGetSP(current_node->edges) > 0)
 		{
@@ -686,19 +693,24 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 				APR_p bucket_node = PStackElementP(current_bucket, bucket_iterator);
 				assert(bucket_node);
 				assert(bucket_node->type);
-				if (bucket_node->type == 1) // Wrong type of node
+				/*
+				if (PTreeFind(already_visited, bucket_node))
 				{
 					continue;
 				}
-				else if (bucket_node->type == 2)
+				*/
+				if ((bucket_node->type == 1))
 				{
-					if (bucket_node->literal != current_literal)
-					{
-						assert(bucket_node->clause == current_clause);
-						PStackPushP(current_edges, bucket_node);
-						PTreeStore(&new_start_nodes, bucket_node);
-						num_edges++;
-					}
+					continue;
+				}
+				// node has type 2
+				assert(bucket_node->type == 2);
+				if (bucket_node->literal != current_literal)
+				{
+					assert(bucket_node->clause == current_clause);
+					PStackPushP(current_edges, bucket_node);
+					PTreeStore(&new_start_nodes, bucket_node);
+					num_edges++;
 				}
 			}
 		}
@@ -712,6 +724,12 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 			{
 				APR_p visited_node = PStackElementP(control->type1_nodes, graph_iterator2);
 				assert(visited_node);
+				/*
+				if (PTreeFind(already_visited, visited_node))
+				{
+					continue;
+				}
+				*/
 				// Check to see if we can make a type 1 edge
 				while (APRComplementarilyUnifiable(current_literal, visited_node->literal))
 				{
@@ -729,7 +747,8 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 		}
 	}
 	//printf("Finished iterating\n");
-	num_edges += APRGraphUpdateEdgesFromList(control, 
+	num_edges += APRGraphUpdateEdgesFromList(control,
+														  already_visited,
 														  &new_start_nodes, 
 														  relevant, 
 														  distance - 1);
