@@ -566,9 +566,7 @@ void APRControlFree(APRControl_p trash)
 APRControl_p APRBuildGraph(ClauseSet_p clauses)
 {
 	APRControl_p control = APRControlAlloc();
-	IntMap_p map = control->map;
 	PStack_p graph_nodes = control->graph_nodes;
-	PStack_p buckets = control->buckets;
 	
 	/* Make the nodes, put them in appropriate buckets,
 	* and add a map taking each clause ident in set to its bucket
@@ -599,9 +597,6 @@ APRControl_p APRBuildGraph(ClauseSet_p clauses)
 PStack_p APRBuildGraphConjectures(ClauseSet_p clauses, PList_p conjectures, int distance)
 {
 	APRControl_p control = APRControlAlloc();
-	IntMap_p map = control->map;
-	PStack_p graph_nodes = control->graph_nodes;
-	PStack_p buckets = control->buckets;
 	
 	/* Make the nodes, put them in appropriate buckets,
 	* and add a map taking each clause ident in set to its bucket
@@ -648,10 +643,8 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 {
 	if (distance < 0)
 	{
-		printf("# Returning from search\n");
 		return 0;
 	}
-	PStack_p graph_nodes = control->graph_nodes;
 	IntMap_p map = control->map;
 	PStack_p start_nodes_stack = PStackAlloc();
 	PTreeToPStack(start_nodes_stack, *start_nodes);
@@ -768,6 +761,11 @@ PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list)
 	return graph_nodes;
 }
 
+/*  Updates all possible edges of the graph corresponding to control.
+ *  Deletes all old edges. 
+ *  Returns the new number of edges.
+*/
+
 long APRGraphUpdateEdges(APRControl_p control)
 {
 	printf("# Updating APR edges\n");
@@ -828,11 +826,11 @@ long APRGraphUpdateEdges(APRControl_p control)
 		{
 			// Create type 1 (inter-clause) edges
 			// Iterate again over the nodes
-			for (PStackPointer graph_iterator2 = 0; graph_iterator2 < PStackGetSP(graph_nodes); graph_iterator2++)
+			for (PStackPointer graph_iterator2 = 0; graph_iterator2 < PStackGetSP(control->type1_nodes); graph_iterator2++)
 			{
-				APR_p visited_node = PStackElementP(graph_nodes, graph_iterator2);
+				APR_p visited_node = PStackElementP(control->type1_nodes, graph_iterator2);
 				assert(visited_node);
-				if (visited_node->type == 2 || visited_node->clause == current_clause)
+				if (visited_node->clause == current_clause)
 				{
 					continue;
 				}
@@ -851,6 +849,10 @@ long APRGraphUpdateEdges(APRControl_p control)
 	return num_edges;
 }
 
+/*  Return true if the equations a and b are complementarily
+ *  unifiable.
+*/ 
+
 bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b)
 {
 	assert (a && b);
@@ -865,7 +867,9 @@ bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b)
 	return res;
 }
 
-/*  Return number of clauses added to the APR graph
+/*  Return number of clauses added to the APR graph.
+ *  This method adds the nodes corresponding to clauses from
+ *  the set to the apr APR graph of control.
  * 
 */
 int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses)
@@ -888,13 +892,13 @@ int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses)
 		}
 		handle = handle->succ;
 	}
-	long num_edges = 0;
-	num_edges = APRGraphUpdateEdges(control);
+	APRGraphUpdateEdges(control);
 	return num_added;
 }
 
 /*  Return number of clauses added to the APR graph
- * 
+ *  This method adds the nodes from the clauses of 
+ *  list to to the APR graph, then updates all the edges.
 */
 int APRGraphAddClausesList(APRControl_p control, PList_p clauses)
 {
@@ -918,8 +922,7 @@ int APRGraphAddClausesList(APRControl_p control, PList_p clauses)
 		}
 		handle = handle->succ;
 	}
-	long num_edges = 0;
-	num_edges = APRGraphUpdateEdges(control);
+	APRGraphUpdateEdges(control);
 	return num_added;
 }
 
@@ -944,8 +947,6 @@ bool APRGraphAddNodes(APRControl_p control, Clause_p clause)
 	{
 		handle_ident = handle_ident - LONG_MIN;
 	}
-	//printf("/* APR graph */ ");ClausePrint(GlobalOut, handle, true);printf("\n");
-	//printf("# handle_ident %ld\n", handle_ident);
 	IntMapAssign(map, handle_ident, clause_bucket);
 	PStack_p clause_literals = EqnListToStack(clause->literals);
 	for (PStackPointer p = 0; p < PStackGetSP(clause_literals); p++)
@@ -1037,24 +1038,18 @@ int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses
 		bool clause_added = PTreeStore(clauses, node_clause);
 		if (clause_added)
 		{
-			//printf("# Relevant clause found in BFS: ");
-			//ClausePrint(GlobalOut, node_clause, true);
-			//printf("\n");
 			num_clauses_found++;
 		}
-		//printf("edges: %ld relevance: %d\n", PStackGetSP(edges), relevance);
 		for (PStackPointer r=0; r<PStackGetSP(edges); r++)
 		{
 			APR_p new_node = PStackElementP(edges, r);
 			assert(new_node);
-			//PStackPushP(temp, new_node);
 			PTreeStore(&temp, new_node);
 		}
 	}
 	PStackReset(nodes);
 	PStack_p temp_stack = PStackAlloc();
 	PTreeToPStack(temp_stack, temp);
-	//printf("temp: %ld nodes: %ld relevance: %d\n", PStackGetSP(temp_stack), PStackGetSP(nodes), relevance);
 	for (PStackPointer q=0; q<PStackGetSP(temp_stack); q++)
 	{
 		APR_p temp_node = PStackElementP(temp_stack, q);
@@ -1102,14 +1097,12 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 	{
 		list_counter++;
 		Clause_p handle = list_handle->key.p_val;
-		//printf("# List clause: ");ClausePrint(GlobalOut, handle, true);printf("\n");
 		long handle_ident = handle->ident;
 		if (handle_ident < 0)
 		{
 			handle_ident = handle_ident - LONG_MIN;
 		}
 		handle_bucket = IntMapGetVal(map, handle_ident);
-		//printf("%p\n", handle_bucket);
 		assert(handle_bucket);
 		for (PStackPointer p = 0; p < PStackGetSP(handle_bucket); p++)
 		{
@@ -1117,7 +1110,6 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 			assert(handle_node);
 			if (handle_node->type == 2)
 			{
-				//printf("# Found type 2 node with %ld edges\n", PStackGetSP(handle_node->edges));
 				PStackPushP(starting_nodes, handle_node);
 			}
 		}
@@ -1125,8 +1117,7 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 	}
 	printf("# %ld starting nodes corresponding to list of length %d found.\n", PStackGetSP(starting_nodes), list_counter);
 	PTree_p clause_tree = NULL;
-	int num_found = APRBreadthFirstSearch(control, starting_nodes, &clause_tree, search_distance);
-	//printf("# %d relevant clauses found.\n", num_found);
+	APRBreadthFirstSearch(control, starting_nodes, &clause_tree, search_distance);
 	PStack_p res = PStackAlloc();
 	PTreeToPStack(res, clause_tree);
 	PStackFree(starting_nodes);
@@ -1261,18 +1252,6 @@ ClauseSet_p EqualityAxioms(TB_p bank)
 	
 	return equality_axioms;
 }
-/*
-int APRNodeCompareRef(const void *node1ref, const void* node2ref)
-{
-	const APR_p n1 = *node1ref;
-	const APR_p n2 = *node2ref;
-	int n1_type = n1->type;
-	int n2_type = n2->type;
-	if (n1_type == n2_type)
-	{
-	}
-}
-*/
 
 /*---------------------------------------------------------------------*/
 /*                        End of File                                  */
