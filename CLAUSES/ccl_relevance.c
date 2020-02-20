@@ -34,6 +34,9 @@ Changes
 /*                      Forward Declarations                           */
 /*---------------------------------------------------------------------*/
 
+#define KBLU  "\x1B[34m"
+#define RESET "\033[0m"
+#define RED   "\x1B[31m"
 
 /*---------------------------------------------------------------------*/
 /*                         Internal Functions                          */
@@ -664,10 +667,27 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 		PTreeStore(relevant, current_clause);
 		PTreeStore(already_visited, current_node);
 		Eqn_p current_literal = current_node->literal;
+		if (ClauseIsConjecture(current_clause))
+		{
+			printf("Conjecture literal of type %d node: ", current_node->type);EqnTSTPPrint(GlobalOut, current_literal, true);printf("\n");
+		}
 		if (PStackGetSP(current_node->edges) > 0)
 		{
 			continue;
 		}
+		if (distance == 1)
+		{
+			printf("Current node clause before failure: ");
+			ClausePrint(GlobalOut, current_clause, true);
+			printf("\n literal: ");
+			EqnTSTPPrint(GlobalOut, current_literal, true);
+			printf("\n");
+			if (ClauseLiteralNumber(current_clause) <= 1)
+			{
+				printf(RED "Danger: unit clause near border of neighborhood\n" RESET);
+			}
+		}
+		
 		PStack_p current_edges = current_node->edges;
 		long current_ident = current_clause->ident;
 		if (current_ident < 0)
@@ -693,12 +713,6 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 				APR_p bucket_node = PStackElementP(current_bucket, bucket_iterator);
 				assert(bucket_node);
 				assert(bucket_node->type);
-				/*
-				if (PTreeFind(already_visited, bucket_node))
-				{
-					continue;
-				}
-				*/
 				if ((bucket_node->type == 1))
 				{
 					continue;
@@ -731,17 +745,36 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 				}
 				*/
 				// Check to see if we can make a type 1 edge
+				int edge_temp_count = 0;
 				while (APRComplementarilyUnifiable(current_literal, visited_node->literal))
 				{
 					PStackPushP(current_edges, visited_node);
 					PStackDiscardElement(control->type1_nodes, graph_iterator2);
 					PTreeStore(&new_start_nodes, visited_node);
 					num_edges++;
+					edge_temp_count++;
+					if (ClauseLiteralNumber(visited_node->clause) > 1)
+					{
+						printf("Current clause: ");
+						ClausePrint(GlobalOut, current_clause, true);
+						printf("\n");
+						printf(KBLU "Link to multiliteral clause created!\n" RESET);
+						ClausePrint(GlobalOut, visited_node->clause, true);
+						printf("\nLiterals: ");
+						EqnTSTPPrint(GlobalOut, current_literal, true);
+						printf(" ");
+						EqnTSTPPrint(GlobalOut, visited_node->literal, true);
+						printf("\n");
+					}
 					if (graph_iterator2 == PStackGetSP(control->type1_nodes))
 					{
 						break;
 					}
 					visited_node = PStackElementP(control->type1_nodes, graph_iterator2);
+				}
+				if (edge_temp_count)
+				{
+					printf("%d interclause edges added, possibly with different literals\n", edge_temp_count);
 				}
 			}
 		}
@@ -756,6 +789,14 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 	PStackFree(start_nodes_stack);
 	return num_edges;
 }
+
+/*  Collect the type 2 nodes of the APR graph in to a PStack_p return
+ *  it.  This method is meant to be used at the start of an APR
+ *  graph search, with the PList_p corresponding to conjectures.
+ *  Type 2 nodes have interclause edges, type 1 nodes would only have
+ *  edges to the nodes we are interested in.
+ * 
+*/
 
 PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list)
 {
@@ -773,7 +814,11 @@ PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list)
 		PStack_p handle_bucket = IntMapGetVal(map, current_ident);
 		for (PStackPointer p = 0; p < PStackGetSP(handle_bucket); p++)
 		{
-			PStackPushP(graph_nodes, PStackElementP(handle_bucket, p));
+			APR_p clause_node = PStackElementP(handle_bucket, p);
+			if (clause_node->type == 2)
+			{
+				PStackPushP(graph_nodes, clause_node);
+			}
 		}
 		list_handle = list_handle->succ;
 	}
@@ -880,9 +925,14 @@ bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b)
 	if (EqnIsPositive(a) && EqnIsPositive(b)) return false;
 	if (EqnIsNegative(a) && EqnIsNegative(b)) return false;
 	
+	//printf("a: ");EqnTSTPPrint(GlobalOut, a, true);printf("\n");
+	//printf("b: ");EqnTSTPPrint(GlobalOut, b, true);printf("\n");
+	
 	Eqn_p a_disj = EqnCopyDisjoint(a);
 	bool res = EqnUnifyP(a_disj, b);
 	EqnFree(a_disj);
+	
+	//printf("%d\n", res);
 	return res;
 }
 
@@ -980,6 +1030,7 @@ bool APRGraphAddNodes(APRControl_p control, Clause_p clause)
 		PStackPushP(control->type1_nodes, type1);
 		PStackPushP(control->type2_nodes, type2);
 	}
+	assert(2*ClauseLiteralNumber(clause) == PStackGetSP(clause_bucket)); 
 	PStackFree(clause_literals);
 	return false;
 }
