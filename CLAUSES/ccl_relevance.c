@@ -626,7 +626,7 @@ PStack_p APRBuildGraphConjectures(ClauseSet_p clauses, PList_p conjectures, int 
 													 &start_tree, 
 													 &relevant_tree, 
 													 distance);
-   printf("# Updated edges");
+   printf("# Relevancy graph completed\n");
 	APRControlFree(control);
 	PStackFree(start_nodes);
 	PStack_p relevant = PStackAlloc();
@@ -667,25 +667,9 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 		PTreeStore(relevant, current_clause);
 		PTreeStore(already_visited, current_node);
 		Eqn_p current_literal = current_node->literal;
-		if (ClauseIsConjecture(current_clause))
-		{
-			printf("Conjecture literal of type %d node: ", current_node->type);EqnTSTPPrint(GlobalOut, current_literal, true);printf("\n");
-		}
 		if (PStackGetSP(current_node->edges) > 0)
 		{
 			continue;
-		}
-		if (distance == 1)
-		{
-			printf("Current node clause before failure: ");
-			ClausePrint(GlobalOut, current_clause, true);
-			printf("\n literal: ");
-			EqnTSTPPrint(GlobalOut, current_literal, true);
-			printf("\n");
-			if (ClauseLiteralNumber(current_clause) <= 1)
-			{
-				printf(RED "Danger: unit clause near border of neighborhood\n" RESET);
-			}
 		}
 		
 		PStack_p current_edges = current_node->edges;
@@ -738,43 +722,18 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 			{
 				APR_p visited_node = PStackElementP(control->type1_nodes, graph_iterator2);
 				assert(visited_node);
-				/*
-				if (PTreeFind(already_visited, visited_node))
-				{
-					continue;
-				}
-				*/
 				// Check to see if we can make a type 1 edge
-				int edge_temp_count = 0;
 				while (APRComplementarilyUnifiable(current_literal, visited_node->literal))
 				{
 					PStackPushP(current_edges, visited_node);
 					PStackDiscardElement(control->type1_nodes, graph_iterator2);
 					PTreeStore(&new_start_nodes, visited_node);
 					num_edges++;
-					edge_temp_count++;
-					if (ClauseLiteralNumber(visited_node->clause) > 1)
-					{
-						printf("Current clause: ");
-						ClausePrint(GlobalOut, current_clause, true);
-						printf("\n");
-						printf(KBLU "Link to multiliteral clause created!\n" RESET);
-						ClausePrint(GlobalOut, visited_node->clause, true);
-						printf("\nLiterals: ");
-						EqnTSTPPrint(GlobalOut, current_literal, true);
-						printf(" ");
-						EqnTSTPPrint(GlobalOut, visited_node->literal, true);
-						printf("\n");
-					}
 					if (graph_iterator2 == PStackGetSP(control->type1_nodes))
 					{
 						break;
 					}
 					visited_node = PStackElementP(control->type1_nodes, graph_iterator2);
-				}
-				if (edge_temp_count)
-				{
-					printf("%d interclause edges added, possibly with different literals\n", edge_temp_count);
 				}
 			}
 		}
@@ -925,10 +884,11 @@ bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b)
 	if (EqnIsPositive(a) && EqnIsPositive(b)) return false;
 	if (EqnIsNegative(a) && EqnIsNegative(b)) return false;
 	
-	//printf("a: ");EqnTSTPPrint(GlobalOut, a, true);printf("\n");
-	//printf("b: ");EqnTSTPPrint(GlobalOut, b, true);printf("\n");
-	
 	Eqn_p a_disj = EqnCopyDisjoint(a);
+
+	//printf("a_disj: ");EqnTSTPPrint(GlobalOut, a_disj, true);printf("\n");
+	//printf("b: ");EqnTSTPPrint(GlobalOut, b, true);printf("\n");
+
 	bool res = EqnUnifyP(a_disj, b);
 	EqnFree(a_disj);
 	
@@ -1208,7 +1168,8 @@ PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance)
 {
 	ClauseSet_p equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank);
 	ClauseSetSetProp(equality_axioms, CPDeleteClause);
-	printf("# Building initial APR graph\n");
+	printf("# Building initial APR graph with %ld extra equality axiom(s)\n", equality_axioms->members);
+	ClauseSetInsertSet(set, equality_axioms);
 	
 	int search_distance = (2*relevance) - 2;
 	PStack_p relevant = APRBuildGraphConjectures(set, list, search_distance);
@@ -1264,6 +1225,12 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 			assert(relevant_clause);
 			ClauseSetMoveClause(relevant_set, relevant_clause);
 		}
+		//~ printf("Relevant set:\n");
+		//~ ClauseSetPrint(GlobalOut, relevant_set, true);
+		//~ printf("\n");
+		//~ printf("Remaining axioms that could not be made relevant:\n");
+		//~ ClauseSetPrint(GlobalOut, proofstate->axioms, true);
+		//~ printf("\n");
 		ClauseSetFree(proofstate->axioms);
 		proofstate->axioms = relevant_set;
 		assert(proofstate->axioms->members > 0);
