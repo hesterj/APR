@@ -665,7 +665,9 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 		APR_p current_node = PStackElementP(start_nodes_stack, graph_iterator);
 		Clause_p current_clause = current_node->clause;
 		PTreeStore(relevant, current_clause);
-		PTreeStore(already_visited, current_node);
+		//PTreeStore(already_visited, current_node);
+		printf("Start clause:\n");
+		ClausePrint(GlobalOut, current_clause, true);
 		Eqn_p current_literal = current_node->literal;
 		if (PStackGetSP(current_node->edges) > 0)
 		{
@@ -722,9 +724,13 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 			{
 				APR_p visited_node = PStackElementP(control->type1_nodes, graph_iterator2);
 				assert(visited_node);
+				printf("Visited node clause:\n");
+				ClausePrint(GlobalOut, visited_node->clause, true);
+				printf("\n");
 				// Check to see if we can make a type 1 edge
 				while (APRComplementarilyUnifiable(current_literal, visited_node->literal))
 				{
+					printf("Complementarily unifiable literal\n");
 					PStackPushP(current_edges, visited_node);
 					PStackDiscardElement(control->type1_nodes, graph_iterator2);
 					PTreeStore(&new_start_nodes, visited_node);
@@ -1178,6 +1184,10 @@ PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance)
 	for (PStackPointer p=0 ; p<PStackGetSP(relevant); p++)
 	{
 		Clause_p relevant_clause = PStackElementP(relevant, p);
+		//~ if (EqnListQueryPropNumber(relevant_clause->literals, EPIsOriented))
+		//~ {
+			//~ printf("Oriented literals in clause?\n");
+		//~ }
 		if (!ClauseQueryProp(relevant_clause, CPDeleteClause))
 		{
 			PStackPushP(relevant_without_equality_axs, relevant_clause);
@@ -1242,6 +1252,7 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 ClauseSet_p EqualityAxioms(TB_p bank)
 {
 	//Setup
+	Sig_p sig = bank->sig;
 	Type_p i_type = bank->sig->type_bank->i_type;
 	Term_p x = VarBankGetFreshVar(bank->vars, i_type);
 	Term_p y = VarBankGetFreshVar(bank->vars, i_type);
@@ -1286,6 +1297,37 @@ ClauseSet_p EqualityAxioms(TB_p bank)
 	Clause_p clause4 = ClauseAlloc(x_equals_z);
 	ClauseRecomputeLitCounts(clause4);
 	ClauseSetInsert(equality_axioms, clause4);
+	
+	// Function equality substitution axioms
+	// There must be one for every f-code of a pred or non const func.
+	
+	FunCode f_count = sig->f_count; // Max used f_code
+	
+	for (FunCode f_code = sig->internal_symbols + 1; f_code <= f_count; f_code++)
+	{
+		int arity = SigFindArity(sig, f_code);
+		if (arity == 0) continue;
+		// Create the apporpriate substituion axiom clauses
+		Term_p x_0 = VarBankGetFreshVar(bank->vars, i_type);
+		Term_p y_0 = VarBankGetAltVar(bank->vars, x_i);
+		Eqn_p subst_axiom = EqnAlloc(x_0, y_0, bank, false);
+		for (int i=1; i<arity; i++)
+		{
+			Term_p x_i = VarBankGetFreshVar(bank->vars, i_type);
+			Term_p y_i = VarBankGetAltVar(bank->vars, x_i);
+			Eqn_p xi_neq_yi = EqnAlloc(x_i, y_i, bank, false);
+			EqnListAppend(&subst_axiom, xi_neq_yi);
+		}
+		if (SigIsFunction(sig, f_code))
+		{
+		}
+		if (SigIsPredicate(sig, f_code))
+		{
+		}
+		Clause_p subst_axiom_clause = ClauseAlloc(subst_axiom);
+		ClauseRecomputeLitCounts(subst_axiom_clause);
+		ClauseSetInsert(equality_axioms, subst_axiom_clause);
+	}
 	
 	return equality_axioms;
 }

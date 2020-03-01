@@ -478,7 +478,7 @@ int main(int argc, char* argv[])
    {
 		APRProofStateProcess(proofstate, apr_relevance_limit);
 		assert(proofstate->axioms->members > 0);
-	}
+   }
 	
    raw_clause_no = proofstate->axioms->members;
    ProofStateLoadWatchlist(proofstate, watchlist_filename, parse_format);
