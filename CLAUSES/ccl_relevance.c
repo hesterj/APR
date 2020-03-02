@@ -1151,7 +1151,8 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 		}
 		list_handle = list_handle->succ;
 	}
-	printf("# %ld starting nodes corresponding to list of length %d found.\n", PStackGetSP(starting_nodes), list_counter);
+	printf("# %ld starting nodes corresponding to list of length %d found.\n"
+			 PStackGetSP(starting_nodes), list_counter);
 	PTree_p clause_tree = NULL;
 	APRBreadthFirstSearch(control, starting_nodes, &clause_tree, search_distance);
 	PStack_p res = PStackAlloc();
@@ -1298,7 +1299,7 @@ ClauseSet_p EqualityAxioms(TB_p bank)
 	ClauseRecomputeLitCounts(clause4);
 	ClauseSetInsert(equality_axioms, clause4);
 	
-	// Function equality substitution axioms
+	// Function/Predicate equality substitution axioms
 	// There must be one for every f-code of a pred or non const func.
 	
 	FunCode f_count = sig->f_count; // Max used f_code
@@ -1308,22 +1309,48 @@ ClauseSet_p EqualityAxioms(TB_p bank)
 		int arity = SigFindArity(sig, f_code);
 		if (arity == 0) continue;
 		// Create the apporpriate substituion axiom clauses
+		PStack_p x_variables = PStackAlloc();
+		PStack_p y_variables = PStackAlloc();
 		Term_p x_0 = VarBankGetFreshVar(bank->vars, i_type);
+		PStackPushP(x_variables, x_0);
 		Term_p y_0 = VarBankGetAltVar(bank->vars, x_i);
+		PStackPushP(y_variables, y_0);
 		Eqn_p subst_axiom = EqnAlloc(x_0, y_0, bank, false);
 		for (int i=1; i<arity; i++)
 		{
 			Term_p x_i = VarBankGetFreshVar(bank->vars, i_type);
+			PStackPushP(x_variables, x_i);
 			Term_p y_i = VarBankGetAltVar(bank->vars, x_i);
+			PStackPushP(y_variables, y_i);
 			Eqn_p xi_neq_yi = EqnAlloc(x_i, y_i, bank, false);
 			EqnListAppend(&subst_axiom, xi_neq_yi);
 		}
+		
+		Term_p left_handle = TermDefaultCellAlloc();
+		left_handle->arity = arity;
+		left_handle->args = TermArgArrayAlloc(arity);
+		
+		for (i=0; i<arity; i++)
+		{
+			left_handle->args[i] = PStackElementP(x_variables, i);
+		}
+		
 		if (SigIsFunction(sig, f_code))
 		{
+			Term_p right_handle = TermDefaultCellAlloc();
+			right_handle->arity = arity;
+			right_handle->args = TermArgArrayAlloc(arity);
+			for (i=0; i<arity; i++)
+			{
+				right_handle->args[i] = PStackElementP(y_variables, i);
+			}
+			Eqn_p final = EqnAlloc(left_handle, right_handle, bank, true);
+			EqnListAppend(&subst_axiom, final);
 		}
-		if (SigIsPredicate(sig, f_code))
+		else if (SigIsPredicate(sig, f_code))
 		{
 		}
+		
 		Clause_p subst_axiom_clause = ClauseAlloc(subst_axiom);
 		ClauseRecomputeLitCounts(subst_axiom_clause);
 		ClauseSetInsert(equality_axioms, subst_axiom_clause);
