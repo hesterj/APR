@@ -666,8 +666,8 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 		Clause_p current_clause = current_node->clause;
 		PTreeStore(relevant, current_clause);
 		//PTreeStore(already_visited, current_node);
-		printf("Start clause:\n");
-		ClausePrint(GlobalOut, current_clause, true);
+		//printf("Start clause:\n");
+		//ClausePrint(GlobalOut, current_clause, true);
 		Eqn_p current_literal = current_node->literal;
 		if (PStackGetSP(current_node->edges) > 0)
 		{
@@ -724,13 +724,13 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 			{
 				APR_p visited_node = PStackElementP(control->type1_nodes, graph_iterator2);
 				assert(visited_node);
-				printf("Visited node clause:\n");
-				ClausePrint(GlobalOut, visited_node->clause, true);
-				printf("\n");
+				//printf("Visited node clause:\n");
+				//ClausePrint(GlobalOut, visited_node->clause, true);
+				//printf("\n");
 				// Check to see if we can make a type 1 edge
 				while (APRComplementarilyUnifiable(current_literal, visited_node->literal))
 				{
-					printf("Complementarily unifiable literal\n");
+					//printf("Complementarily unifiable literal\n");
 					PStackPushP(current_edges, visited_node);
 					PStackDiscardElement(control->type1_nodes, graph_iterator2);
 					PTreeStore(&new_start_nodes, visited_node);
@@ -1151,7 +1151,7 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 		}
 		list_handle = list_handle->succ;
 	}
-	printf("# %ld starting nodes corresponding to list of length %d found.\n"
+	printf("# %ld starting nodes corresponding to list of length %d found.\n",
 			 PStackGetSP(starting_nodes), list_counter);
 	PTree_p clause_tree = NULL;
 	APRBreadthFirstSearch(control, starting_nodes, &clause_tree, search_distance);
@@ -1313,7 +1313,7 @@ ClauseSet_p EqualityAxioms(TB_p bank)
 		PStack_p y_variables = PStackAlloc();
 		Term_p x_0 = VarBankGetFreshVar(bank->vars, i_type);
 		PStackPushP(x_variables, x_0);
-		Term_p y_0 = VarBankGetAltVar(bank->vars, x_i);
+		Term_p y_0 = VarBankGetAltVar(bank->vars, x_0);
 		PStackPushP(y_variables, y_0);
 		Eqn_p subst_axiom = EqnAlloc(x_0, y_0, bank, false);
 		for (int i=1; i<arity; i++)
@@ -1329,31 +1329,64 @@ ClauseSet_p EqualityAxioms(TB_p bank)
 		Term_p left_handle = TermDefaultCellAlloc();
 		left_handle->arity = arity;
 		left_handle->args = TermArgArrayAlloc(arity);
+		left_handle->f_code = f_code;
+		left_handle->type = SigGetType(bank->sig, f_code);
 		
-		for (i=0; i<arity; i++)
+		for (int i=0; i<arity; i++)
 		{
 			left_handle->args[i] = PStackElementP(x_variables, i);
 		}
+		left_handle->v_count = arity;
+		TBInsert(bank, left_handle, DEREF_ALWAYS);
 		
+		Term_p right_handle;
 		if (SigIsFunction(sig, f_code))
 		{
-			Term_p right_handle = TermDefaultCellAlloc();
+			right_handle = TermDefaultCellAlloc();
 			right_handle->arity = arity;
+			right_handle->f_code = f_code;
 			right_handle->args = TermArgArrayAlloc(arity);
-			for (i=0; i<arity; i++)
+			right_handle->type = SigGetType(bank->sig, f_code);
+			for (int i=0; i<arity; i++)
 			{
 				right_handle->args[i] = PStackElementP(y_variables, i);
 			}
+			right_handle->v_count = arity;
+			TBInsert(bank, right_handle, DEREF_ALWAYS);
 			Eqn_p final = EqnAlloc(left_handle, right_handle, bank, true);
 			EqnListAppend(&subst_axiom, final);
 		}
 		else if (SigIsPredicate(sig, f_code))
 		{
+			right_handle = bank->true_term;
+			assert(left_handle);
+			assert(right_handle);
+			Eqn_p seq = EqnAlloc(left_handle, right_handle, bank, false);
+			EqnListAppend(&subst_axiom, seq);
+			
+			left_handle = TermDefaultCellAlloc();
+			left_handle->arity = arity;
+			left_handle->args = TermArgArrayAlloc(arity);
+			left_handle->f_code = f_code;
+			left_handle->type = SigGetType(bank->sig, f_code);
+			for (int i=0; i<arity; i++)
+			{
+				left_handle->args[i] = PStackElementP(y_variables, i);
+			}
+			left_handle->v_count = arity;
+			TBInsert(bank, left_handle, DEREF_ALWAYS);
+			Eqn_p final = EqnAlloc(left_handle, right_handle, bank, true);
+			EqnListAppend(&subst_axiom, final);
 		}
 		
 		Clause_p subst_axiom_clause = ClauseAlloc(subst_axiom);
 		ClauseRecomputeLitCounts(subst_axiom_clause);
 		ClauseSetInsert(equality_axioms, subst_axiom_clause);
+		//printf("Substitution axiom:\n");
+		//ClausePrint(GlobalOut, subst_axiom_clause, true);
+		//printf("\n");
+		PStackFree(x_variables);
+		PStackFree(y_variables);
 	}
 	
 	return equality_axioms;
