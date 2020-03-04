@@ -22,7 +22,7 @@ Changes
 -----------------------------------------------------------------------*/
 
 #include "ccl_relevance.h"
-
+#include <che_clausesetfeatures.h>
 
 
 /*---------------------------------------------------------------------*/
@@ -617,7 +617,8 @@ PStack_p APRBuildGraphConjectures(ClauseSet_p clauses, PList_p conjectures, int 
 	PStack_p relevant_stack = PStackAlloc();
 	PTree_p start_tree = NULL;
 	PTree_p already_visited = NULL;
-	printf("# Creating APR graph in ambient set of %ld clauses.\n", clauses->members);
+	printf("# Creating APR graph in ambient set of %ld clauses and %ld type 1 nodes.\n", clauses->members, 
+						 																							 PStackGetSP(control->type1_nodes));
 	PStack_p start_nodes = APRCollectNodesFromList(control, conjectures);
 	for (PStackPointer p = 0; p<PStackGetSP(start_nodes); p++)
 	{
@@ -1291,11 +1292,20 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 
 PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance)
 {
-	ClauseSet_p equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank);
-	ClauseSetSetProp(equality_axioms, CPDeleteClause);
-	printf("# Building initial APR graph with %ld extra equality axiom(s)\n", equality_axioms->members);
-	ClauseSetInsertSet(set, equality_axioms);
-	
+	printf("# Checking if set is equational.\n");
+	if (ClauseSetIsEquational(set))
+	{
+		ClauseSet_p equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank);
+		ClauseSetSetProp(equality_axioms, CPDeleteClause);
+		printf("# Building initial APR graph with %ld extra equality axiom(s)\n", equality_axioms->members);
+		ClauseSetInsertSet(set, equality_axioms);
+		ClauseSetFree(equality_axioms);
+	}
+	else
+	{
+		printf("# Axiom specification is not equational.\n");
+	}
+
 	int search_distance = (2*relevance) - 2;
 	PStack_p relevant = APRBuildGraphConjectures(set, list, search_distance);
 	long eq_free_counter = 0;
@@ -1320,7 +1330,6 @@ PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance)
 	}
 	printf("# Free'd %ld relevant equality axioms.  Freeing remaining from set.\n", eq_free_counter);
 	ClauseSetDeleteMarkedEntries(set);
-	ClauseSetFree(equality_axioms);
 	PStackFree(relevant);
 	return relevant_without_equality_axs;
 }
