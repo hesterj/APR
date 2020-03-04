@@ -617,6 +617,7 @@ PStack_p APRBuildGraphConjectures(ClauseSet_p clauses, PList_p conjectures, int 
 	PStack_p relevant_stack = PStackAlloc();
 	PTree_p start_tree = NULL;
 	PTree_p already_visited = NULL;
+	printf("# Creating APR graph in ambient set of %ld clauses.\n", clauses->members);
 	PStack_p start_nodes = APRCollectNodesFromList(control, conjectures);
 	for (PStackPointer p = 0; p<PStackGetSP(start_nodes); p++)
 	{
@@ -776,15 +777,11 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 	{
 		APR_p current_node = PStackElementP(start_nodes_stack, graph_iterator);
 		Clause_p current_clause = current_node->clause;
-		//printf("There are %ld relevant clauses now.\n", PTreeNodes(*relevant));
 		if (!ClauseQueryProp(current_clause, CPIsAPRRelevant))
 		{
 			ClauseSetProp(current_clause, CPIsAPRRelevant);
 			PStackPushP(relevant, current_clause);
 		}
-		//PTreeStore(already_visited, current_node);
-		//printf("Start clause:\n");
-		//ClausePrint(GlobalOut, current_clause, true);
 		Eqn_p current_literal = current_node->literal;
 		if (PStackGetSP(current_node->edges) > 0)
 		{
@@ -804,7 +801,7 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 		assert(current_edges);
 		assert(current_node->type);
 		assert(current_ident > 0);
-		
+
 		if (current_node->type == 1)
 		{
 			// Create type 2 (intra-clause) edges
@@ -833,7 +830,7 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 		}
 		else if (current_node->type == 2)
 		{
-			//printf("Iterating over graph... l: %ld\n", PStackGetSP(graph_nodes));
+			//printf("# Iterating over graph type1 nodes... l: %ld\n", PStackGetSP(control->type1_nodes));
 			// Create type 1 (inter-clause) edges
 			// Iterate again over the nodes
 			
@@ -841,13 +838,19 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 			{
 				APR_p visited_node = PStackElementP(control->type1_nodes, graph_iterator2);
 				assert(visited_node);
-				//printf("Visited node clause:\n");
-				//ClausePrint(GlobalOut, visited_node->clause, true);
-				//printf("\n");
+				Clause_p visited_node_clause = visited_node->clause;
+				if (ClauseQueryProp(current_clause, CPDeleteClause) && ClauseQueryProp(visited_node_clause, CPDeleteClause))
+				{
+					//printf("# Do not create edges between equality axioms...\n");
+					continue;
+				}
 				// Check to see if we can make a type 1 edge
 				while (APRComplementarilyUnifiable(current_literal, visited_node->literal))
 				{
-					//printf("Complementarily unifiable literal\n");
+					if (ClauseQueryProp(current_clause, CPDeleteClause) && ClauseQueryProp(visited_node_clause, CPDeleteClause))
+					{
+						break;
+					}
 					PStackPushP(current_edges, visited_node);
 					PStackDiscardElement(control->type1_nodes, graph_iterator2);
 					PTreeStore(&new_start_nodes, visited_node);
@@ -1371,6 +1374,7 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 ClauseSet_p EqualityAxioms(TB_p bank)
 {
 	//Setup
+	printf("# Creating equality axioms\n");
 	Sig_p sig = bank->sig;
 	Type_p i_type = bank->sig->type_bank->i_type;
 	Term_p x = VarBankGetFreshVar(bank->vars, i_type);
