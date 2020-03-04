@@ -28,19 +28,23 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=8
-FILE_NAME_0=37403;C;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.c;0;3
-FILE_NAME_1=4384;C++;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.h;0;3
-FILE_NAME_2=0;C;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCONTROL%2Fcco_proofproc.c;0;3
-FILE_NAME_3=0;C++;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCONTROL%2Fcco_proofproc.h;0;3
-FILE_NAME_4=26447;C;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FTERMS%2Fcte_signature.c;0;3
-FILE_NAME_5=10445;C++;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FTERMS%2Fcte_signature.h;0;3
-FILE_NAME_6=0;C;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clauses.c;0;3
-FILE_NAME_7=0;C++;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clauses.h;0;3
-FILE_NAME_8=14442;C;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_eqn.c;0;3
-FILE_NAME_9=8154;C++;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_eqn.h;0;3
-FILE_NAME_10=8740;C;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_eqnlist.c;0;3
-FILE_NAME_11=4668;C++;0;EUTF-8;1;1;0;%2Fmnt%2Fdroplet%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_eqnlist.h;0;3
+current_page=0
+FILE_NAME_0=17632;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.c;0;3
+FILE_NAME_1=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.h;0;3
+FILE_NAME_2=14404;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_ptrees.c;0;3
+FILE_NAME_3=3239;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_ptrees.h;0;3
+FILE_NAME_4=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_plocalstacks.c;0;3
+FILE_NAME_5=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_plocalstacks.h;0;3
+FILE_NAME_6=4794;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_pstacks.c;0;3
+FILE_NAME_7=3426;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_pstacks.h;0;3
+FILE_NAME_8=4727;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FTERMS%2Fcte_subst.c;0;3
+FILE_NAME_9=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FTERMS%2Fcte_subst.h;0;3
+FILE_NAME_10=3793;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_f_generality.c;0;3
+FILE_NAME_11=3638;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_f_generality.h;0;3
+FILE_NAME_12=1804;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clausefunc.c;0;3
+FILE_NAME_13=1656;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clausefunc.h;0;3
+FILE_NAME_14=57945;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clauses.c;0;3
+FILE_NAME_15=18326;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clauses.h;0;3
 
 [VTE]
 last_dir=/home

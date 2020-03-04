@@ -122,6 +122,11 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 											PTree_p *start_nodes, 
 											PTree_p *relevant, 
 											int distance);
+long APRGraphUpdateEdgesFromListStack(APRControl_p control,
+                                                                                        PTree_p *already_visited,
+                                                                                        PTree_p *start_nodes,
+                                                                                        PStack_p relevant,
+                                                                                        int distance);
 int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses, int relevance);
 PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance);
 PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list);
