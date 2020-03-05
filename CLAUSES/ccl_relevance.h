@@ -92,11 +92,15 @@ typedef struct aprcontrolcell
 	PStack_p graph_nodes;
 	PStack_p type1_nodes;
 	PStack_p type2_nodes;
+	PStack_p type1_equality_nodes;
+	PStack_p type1_nonequality_nodes;
 }APRControlCell, *APRControl_p;
 
 typedef struct aprcell
 {
 	short int type;
+	bool visited;
+	bool equality_node;
 	Eqn_p literal;
 	Clause_p clause;
 	PStack_p edges;
@@ -106,16 +110,16 @@ typedef struct aprcell
 #define APRCellFree(junk) SizeFree(junk, sizeof(APRCell))
 #define APRControlCellAlloc() (APRControlCell*)SizeMalloc(sizeof(APRControlCell))
 #define APRControlCellFree(junk) SizeFree(junk, sizeof(APRControlCell))
-APR_p APRAlloc(short int type, Eqn_p literal, Clause_p clause);
+APR_p APRAlloc(short int type, Eqn_p literal, Clause_p clause, bool equality);
 void APRFree(APR_p trash);
 APRControl_p APRControlAlloc();
 void APRControlFree(APRControl_p trash);
 bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b);
 APRControl_p APRBuildGraph(ClauseSet_p clauses);
-PStack_p APRBuildGraphConjectures(ClauseSet_p clauses, PList_p conjectures, int distance);
-int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses);
+PStack_p APRBuildGraphConjectures(APRControl_p control, ClauseSet_p clauses, PList_p conjectures, int distance);
+int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses, bool equality);
 int APRGraphAddClausesList(APRControl_p control, PList_p clauses);
-bool APRGraphAddNodes(APRControl_p control, Clause_p clause);
+bool APRGraphAddNodes(APRControl_p control, Clause_p clause, bool equality);
 long APRGraphUpdateEdges(APRControl_p control);
 long APRGraphUpdateEdgesFromList(APRControl_p control,
 											PTree_p *already_visited,
@@ -123,10 +127,10 @@ long APRGraphUpdateEdgesFromList(APRControl_p control,
 											PTree_p *relevant, 
 											int distance);
 long APRGraphUpdateEdgesFromListStack(APRControl_p control,
-                                                                                        PTree_p *already_visited,
-                                                                                        PTree_p *start_nodes,
-                                                                                        PStack_p relevant,
-                                                                                        int distance);
+												  PTree_p *already_visited,
+												  PStack_p start_nodes,
+												  PStack_p relevant,
+												  int distance);
 int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses, int relevance);
 PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance);
 PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list);
