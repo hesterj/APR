@@ -81,7 +81,8 @@ long ProofStatePreprocess(ProofState_p state, long level);
  *  These are functions for a directed graph for the purpose of 
  *  computing alternating path relevance.
  *  The literals and clauses are NOT copies, so are not free'd in 
- *  the graph cleanup methods.  
+ *  the graph cleanup methods.
+ *  The entry point is APRProofStateProcess.  
  *  John Hester
 */
 
@@ -94,6 +95,10 @@ typedef struct aprcontrolcell
 	PStack_p type2_nodes;
 	PStack_p type1_equality_nodes;
 	PStack_p type1_nonequality_nodes;
+	PStack_p equality_axioms;
+	FixedDArray_p substitution_axiom_characteristic;
+	Sig_p sig;
+	TB_p terms;
 }APRControlCell, *APRControl_p;
 
 typedef struct aprcell
@@ -112,20 +117,14 @@ typedef struct aprcell
 #define APRControlCellFree(junk) SizeFree(junk, sizeof(APRControlCell))
 APR_p APRAlloc(short int type, Eqn_p literal, Clause_p clause, bool equality);
 void APRFree(APR_p trash);
-APRControl_p APRControlAlloc();
+APRControl_p APRControlAlloc(Sig_p sig, TB_p terms);
 void APRControlFree(APRControl_p trash);
 bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b);
-APRControl_p APRBuildGraph(ClauseSet_p clauses);
 PStack_p APRBuildGraphConjectures(APRControl_p control, ClauseSet_p clauses, PList_p conjectures, int distance);
 int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses, bool equality);
 int APRGraphAddClausesList(APRControl_p control, PList_p clauses);
 bool APRGraphAddNodes(APRControl_p control, Clause_p clause, bool equality);
 long APRGraphUpdateEdges(APRControl_p control);
-long APRGraphUpdateEdgesFromList(APRControl_p control,
-											PTree_p *already_visited,
-											PTree_p *start_nodes, 
-											PTree_p *relevant, 
-											int distance);
 long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 												  PTree_p *already_visited,
 												  PStack_p start_nodes,
@@ -136,12 +135,17 @@ PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance);
 PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list);
 
 PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance);
-PStack_p APRRelevanceNeighborhood(ClauseSet_p set, PList_p list, int relevance);
-
-int APRNodeCompareRef(const void *node1ref, const void* node2ref);
+PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance);
 
 void APRProofStateProcess(ProofState_p proofstate, int relevance);
 ClauseSet_p EqualityAxioms(TB_p bank);
+
+int APRNodeStackAddSubstAxioms(APRControl_p control, PStack_p nodes);
+int APRNodeAddSubstAxioms(APRControl_p control, APR_p node);
+int EqnAddSubstAxioms(APRControl_p control, Eqn_p eqn);
+int TermAddSubstAxioms(APRControl_p control, Term_p term);
+Clause_p ClauseCreateSubstitutionAxiom(APRControl_p control, Sig_p sig, FunCode f_code);
+
 
 #endif
 
