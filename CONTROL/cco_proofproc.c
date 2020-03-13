@@ -1699,11 +1699,13 @@ Clause_p Saturate(ProofState_p state, ProofControl_p control, long
       unsatisfiable = ProcessClause(state, control, answer_limit);
       if(unsatisfiable)
       {
+			//APRLiveProofStateProcess(state, 3); //JH
          break;
       }
       unsatisfiable = cleanup_unprocessed_clauses(state, control);
       if(unsatisfiable)
       {
+			//APRLiveProofStateProcess(state, 3); //JH
          break;
       }
       if(control->heuristic_parms.sat_check_grounding != GMNoGrounding)

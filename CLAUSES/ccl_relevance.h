@@ -95,7 +95,7 @@ typedef struct aprcontrolcell
 	PStack_p type2_nodes;
 	PStack_p type1_equality_nodes;
 	PStack_p type1_nonequality_nodes;
-	PStack_p equality_axioms;
+	ClauseSet_p equality_axioms;
 	FixedDArray_p substitution_axiom_characteristic;
 	Sig_p sig;
 	TB_p terms;
@@ -138,7 +138,8 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance);
 PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance);
 
 void APRProofStateProcess(ProofState_p proofstate, int relevance);
-ClauseSet_p EqualityAxioms(TB_p bank);
+void APRLiveProofStateProcess(ProofState_p proofstate, int relevance);
+ClauseSet_p EqualityAxioms(TB_p bank, bool substitution);
 
 int APRNodeStackAddSubstAxioms(APRControl_p control, PStack_p nodes);
 int APRNodeAddSubstAxioms(APRControl_p control, APR_p node);
