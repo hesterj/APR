@@ -539,7 +539,9 @@ int main(int argc, char* argv[])
       }
    }
    PERF_CTR_ENTRY(SatTimer);
-
+	
+	printf("# Before saturation there are %ld axioms and %ld unprocessed clauses\n", proofstate->axioms->members, proofstate->unprocessed->members);
+	
 #ifdef ENABLE_LFHO
    // if the problem is HO -> we have to use KBO6
    assert(problemType != PROBLEM_HO || proofcontrol->ocb->type == KBO6);

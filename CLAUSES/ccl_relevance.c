@@ -610,14 +610,14 @@ PStack_p APRBuildGraphConjectures(APRControl_p control, ClauseSet_p clauses, PLi
 	PStack_p relevant_stack = PStackAlloc();
 	PTree_p start_tree = NULL;
 	PTree_p already_visited = NULL;
-	printf("# Creating APR graph in ambient set of %ld nonequality axioms and %ld type 1 nodes.\n", clauses->members, 
+	fprintf(GlobalOut, "# Creating APR graph in ambient set of %ld nonequality axioms and %ld type 1 nodes.\n", clauses->members, 
 						 																							 PStackGetSP(control->type1_nodes));
 	PStack_p start_nodes = APRCollectNodesFromList(control, conjectures);
    APRGraphUpdateEdgesFromListStack(control, &already_visited,
 													 start_nodes, 
 													 relevant_stack, 
 													 distance);
-   printf("# Relevancy graph completed\n");
+   fprintf(GLobalOut, "# Relevancy graph completed\n");
 	PStackFree(start_nodes);
 	PTreeFree(start_tree);
 	PTreeFree(already_visited);
@@ -649,10 +649,10 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 	if (control->equality_axioms)
 	{
 		int subst_axs_added = APRNodeStackAddSubstAxioms(control, start_nodes_stack);
-		printf("# Created %d new equality axioms\n", subst_axs_added);
+		fprintf(GlobalOut, "# Created %d new equality axioms\n", subst_axs_added);
 	}
 	// Create new edges at this level
-	printf("# Updating APR edges d:%d sn:%ld\n", distance, PStackGetSP(start_nodes_stack));
+	fprintf(GlobalOut, "# Updating APR edges d:%d sn:%ld\n", distance, PStackGetSP(start_nodes_stack));
 	for (PStackPointer graph_iterator = 0; graph_iterator<PStackGetSP(start_nodes_stack); graph_iterator++)
 	{
 		fprintf(GlobalOut, "\r# %ld remaining at depth", PStackGetSP(start_nodes_stack)-graph_iterator);
@@ -1201,7 +1201,7 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 
 PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance)
 {
-	printf("# Checking if set is equational.\n");
+	fprintf(GlobalOut, "# Checking if set is equational.\n");
 	APRControl_p control = APRControlAlloc(sig, set->anchor->succ->literals->bank);
 	ClauseSet_p equality_axioms = NULL;
 	if (ClauseSetIsEquational(set))
@@ -1209,12 +1209,12 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 		equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank, 0);
 		control->equality_axioms = equality_axioms;
 		ClauseSetSetProp(equality_axioms, CPDeleteClause);
-		printf("# Building initial APR graph with %ld extra equality axiom(s)\n", equality_axioms->members);
+		fprintf(GlobalOut, "# Building initial APR graph with %ld extra equality axiom(s)\n", equality_axioms->members);
 		APRGraphAddClauses(control, equality_axioms, true);
 	}
 	else
 	{
-		printf("# Axioms nonequational\n");
+		fprintf(GlobalOut, "# Axioms nonequational\n");
 	}
 
 	int search_distance = (2*relevance) - 2;
@@ -1259,7 +1259,7 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 																	proofstate->axioms,
 																	conjectures,
 																	relevance);
-		printf("# Relevant axioms at relevance distance %d: %ld of %ld\n", relevance, 
+		fprintf(GlobalOut, "# Relevant axioms at relevance distance %d: %ld of %ld\n", relevance, 
 																								 PStackGetSP(relevant), 
 																								 proofstate->axioms->members);
 		if (PStackGetSP(relevant) < proofstate->axioms->members)
@@ -1273,12 +1273,6 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 			assert(relevant_clause);
 			ClauseSetMoveClause(relevant_set, relevant_clause);
 		}
-		//~ printf("Relevant set:\n");
-		//~ ClauseSetPrint(GlobalOut, relevant_set, true);
-		//~ printf("\n");
-		//~ printf("Remaining axioms that could not be made relevant:\n");
-		//~ ClauseSetPrint(GlobalOut, proofstate->axioms, true);
-		//~ printf("\n");
 		ClauseSetFree(proofstate->axioms);
 		proofstate->axioms = relevant_set;
 		assert(proofstate->axioms->members > 0);
