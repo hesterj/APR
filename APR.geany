@@ -28,9 +28,9 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=25
-FILE_NAME_0=22598;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.c;0;3
-FILE_NAME_1=4770;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.h;0;3
+current_page=0
+FILE_NAME_0=47773;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.c;0;3
+FILE_NAME_1=5022;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.h;0;3
 FILE_NAME_2=14404;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_ptrees.c;0;3
 FILE_NAME_3=3239;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_ptrees.h;0;3
 FILE_NAME_4=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_plocalstacks.c;0;3
@@ -56,6 +56,7 @@ FILE_NAME_23=20010;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES
 FILE_NAME_24=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_eqnlist.h;0;3
 FILE_NAME_25=18155;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FPROVER%2Feprover.c;0;3
 FILE_NAME_26=4665;Make;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FMakefile.vars;0;3
+FILE_NAME_27=254;Python;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FTESTING%2FTPTP-v7.3.0%2Fcollectproblemswithmanyaxioms.py;0;3
 
 [VTE]
 last_dir=/home

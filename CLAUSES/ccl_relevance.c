@@ -617,7 +617,7 @@ PStack_p APRBuildGraphConjectures(APRControl_p control, ClauseSet_p clauses, PLi
 													 start_nodes, 
 													 relevant_stack, 
 													 distance);
-   fprintf(GLobalOut, "# Relevancy graph completed\n");
+   fprintf(GlobalOut, "# Relevancy graph completed\n");
 	PStackFree(start_nodes);
 	PTreeFree(start_tree);
 	PTreeFree(already_visited);
@@ -747,8 +747,11 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 					PStackPushP(current_edges, visited_node);
 					PStackPushP(new_start_nodes, visited_node);
 					PStackDiscardElement(type1stack, t1_iter);
-					if (type1stack != control->type1_nodes)
+					//if (type1stack != control->type1_nodes)
+					if (type1stack == control->type1_equality_nodes)
 					{
+						assert(type1stack != control->type1_nodes);
+						printf("t1_iter: %ld SP of type1 nodes: %ld\n", t1_iter, PStackGetSP(control->type1_nodes));
 						PStackDiscardElement(control->type1_nodes, t1_iter);
 					}
 					t1_iter--;
@@ -1232,6 +1235,7 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 		}
 		else 
 		{
+			assert(ClauseQueryProp(relevant_clause, CPDeleteClause));
 			ClauseDelProp(relevant_clause, CPDeleteClause);
 		}
 	}
@@ -1519,9 +1523,10 @@ int TermAddSubstAxioms(APRControl_p control, Term_p term)
 			substitution_axiom_characteristic->array[f_code] = f_code;
 			num_added++;
 			Clause_p substitution_axiom = ClauseCreateSubstitutionAxiom(control, sig, f_code);
-			ClauseSetProp(substitution_axiom, CPDeleteClause);
-			ClauseSetInsert(control->equality_axioms, substitution_axiom);
+			//ClauseSetProp(substitution_axiom, CPDeleteClause);
+			//ClauseSetInsert(control->equality_axioms, substitution_axiom);
 			assert(substitution_axiom);
+			assert(substitution_axiom->set);
 			APRGraphAddNodes(control, substitution_axiom, true);
 		}
 	}
@@ -1611,9 +1616,9 @@ Clause_p ClauseCreateSubstitutionAxiom(APRControl_p control, Sig_p sig, FunCode 
 	}
 	
 	Clause_p subst_axiom_clause = ClauseAlloc(subst_axiom);
-	//ClauseSetProp(subst_axiom_clause, CPDeleteClause);
 	ClauseRecomputeLitCounts(subst_axiom_clause);
-	//ClauseSetInsert(equality_axioms, subst_axiom_clause);
+	ClauseSetProp(subst_axiom_clause, CPDeleteClause);
+	ClauseSetInsert(control->equality_axioms, subst_axiom_clause);
 	//printf("Substitution axiom:\n");
 	//ClausePrint(GlobalOut, subst_axiom_clause, true);
 	//printf("\n");
