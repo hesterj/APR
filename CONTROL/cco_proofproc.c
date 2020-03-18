@@ -1453,7 +1453,7 @@ Clause_p ProcessClause(ProofState_p state, ProofControl_p control,
    // Orphans have been excluded during selection now
    
    /*
-   if ((ProofStateProcCardinality(state) > 0) && (state->processed_count % 100 == 0))
+   if ((ProofStateProcCardinality(state) > 0) && (state->processed_count % 1000 == 0))
    {
 		printf("# Unprocessed: %ld ProofStateProcCardinality: %ld\n", 
 						state->unprocessed->members, 
@@ -1697,15 +1697,17 @@ Clause_p Saturate(ProofState_p state, ProofControl_p control, long
    {
       count++;
       unsatisfiable = ProcessClause(state, control, answer_limit);
+      if (count > 0 && count % 1000 == 0)
+      {
+			APRLiveProofStateProcess(state, 3); //JH
+		}
       if(unsatisfiable)
       {
-			//APRLiveProofStateProcess(state, 3); //JH
          break;
       }
       unsatisfiable = cleanup_unprocessed_clauses(state, control);
       if(unsatisfiable)
       {
-			//APRLiveProofStateProcess(state, 3); //JH
          break;
       }
       if(control->heuristic_parms.sat_check_grounding != GMNoGrounding)

@@ -605,6 +605,12 @@ PStack_p APRBuildGraphConjectures(APRControl_p control, ClauseSet_p clauses, PLi
 		APRGraphAddNodes(control, handle, false);
 		handle = handle->succ;
 	}
+	
+	//~ Clause_p bucket_test_clause = conjectures->succ->key.p_val;
+	//~ printf("# BUCKET TEST CLAUSE: ");ClausePrint(GlobalOut, bucket_test_clause, true);printf("\n");
+	//~ PStack_p bucket_test = IntMapGetVal(control->map, bucket_test_clause->ident - LONG_MIN);
+	//~ printf("# BUCKET POINTER: %p\n", bucket_test);
+	
 	// Now we need to actually build the graph.
 	// Add all possible edges from the conjecture nodes.
 	PStack_p relevant_stack = PStackAlloc();
@@ -791,6 +797,7 @@ PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list)
 		{
 			current_ident = current_ident - LONG_MIN;
 		}
+		printf("# Searching for bucket of ");ClausePrint(GlobalOut, clause_handle, true); printf("\n");
 		PStack_p handle_bucket = IntMapGetVal(map, current_ident);
 		assert(handle_bucket);
 		for (PStackPointer p = 0; p < PStackGetSP(handle_bucket); p++)
@@ -1195,11 +1202,10 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 
 /*
  *  Return a stack of clauses from set that are within relevance
- *  distance of clauses from list.
- *  The clauses of list must be members of set,
- *  or added to the graph corresponding to control by changing 
- *  this method.
+ *  distance of clauses from list
  * 
+ * Side effects:  Adds equality axioms to the APR graph if equality is detected.
+ *  
 */
 
 PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance)
@@ -1219,7 +1225,8 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 	{
 		fprintf(GlobalOut, "# Axioms nonequational\n");
 	}
-
+	//int conjectures_added = APRGraphAddClausesList(control, list);
+	//assert(conjectures_added);
 	int search_distance = (2*relevance) - 2;
 	PStack_p relevant = APRBuildGraphConjectures(control, 
 																set, 
