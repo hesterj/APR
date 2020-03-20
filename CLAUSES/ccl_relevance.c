@@ -799,6 +799,11 @@ PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list)
 		}
 		printf("# Searching for bucket of ");ClausePrint(GlobalOut, clause_handle, true); printf("\n");
 		PStack_p handle_bucket = IntMapGetVal(map, current_ident);
+		if (handle_bucket == NULL)  // If there is no bucket for this clause, create its nodes and add the bucket
+		{
+			APRGraphAddClausesList(control, list);
+			handle_bucket = IntMapGetVal(map, current_ident);
+		}
 		assert(handle_bucket);
 		for (PStackPointer p = 0; p < PStackGetSP(handle_bucket); p++)
 		{
@@ -979,7 +984,7 @@ int APRGraphAddClausesList(APRControl_p control, PList_p clauses)
 		{
 			handle_ident = handle_ident - LONG_MIN;
 		}
-		if (IntMapGetVal(map, handle_ident) == NULL)
+		if (IntMapGetVal(map, handle_ident) == NULL) // Add the clause to the graph
 		{
 			APRGraphAddNodes(control, handle_clause, false);
 			num_added++;
@@ -987,7 +992,7 @@ int APRGraphAddClausesList(APRControl_p control, PList_p clauses)
 		}
 		handle = handle->succ;
 	}
-	APRGraphUpdateEdges(control);
+	//APRGraphUpdateEdges(control);
 	return num_added;
 }
 
@@ -1323,17 +1328,44 @@ void APRLiveProofStateProcess(ProofState_p proofstate, int relevance)
 		}
 		ClauseSet_p relevant_set = ClauseSetAlloc();
 		printf("# %ld relevant unprocessed clauses found\n", PStackGetSP(relevant));
+		int removed = 0;
+		ClauseSet_p new_unprocessed = ClauseSetAlloc();
 		for (PStackPointer p=0; p<PStackGetSP(relevant); p++)
 		{
-			Clause_p relevant_clause = PStackElementP(relevant, p);
-			assert(ClauseQueryProp(relevant_clause, CPIsAPRRelevant));
-			//assert(relevant_clause);
-			//ClauseSetMoveClause(relevant_set, relevant_clause);
+			ClauseSetMoveClause(new_unprocessed, PStackElementP(relevant,p));
 		}
-		//ClauseSetFree(proofstate->axioms);
-		//proofstate->axioms = relevant_set;
-		//assert(proofstate->axioms->members > 0);
-		//PStackFree(relevant);
+		ClauseSetRemoveEvaluations(proofstate->unprocessed);
+		ClauseSetFree(proofstate->unprocessed);
+		proofstate->unprocessed = new_unprocessed;
+		printf("Remaining members of unprocessed: %ld\n", proofstate->unprocessed->members);
+		//~ for (PStackPointer p=0; p<PStackGetSP(relevant); p++)
+		//~ {
+			//~ Clause_p relevant_clause = PStackElementP(relevant, p);
+			//~ assert(ClauseQueryProp(relevant_clause, CPIsAPRRelevant));
+			//~ //assert(relevant_clause);
+			//~ //ClauseSetMoveClause(relevant_set, relevant_clause);
+		//~ }
+		//~ // Remove non APR relevant unprocessed clauses
+		//~ int removed = 0;
+		//~ for (Clause_p unprocessed_handle = proofstate->unprocessed->anchor->succ;
+				//~ unprocessed_handle != proofstate->unprocessed->anchor;
+				//~ unprocessed_handle = unprocessed_handle->succ)
+		//~ {
+			//~ Clause_p unprocessed = unprocessed_handle;
+			//~ if (!ClauseQueryProp(unprocessed, CPIsAPRRelevant))
+			//~ {
+				//~ ClauseSetExtractEntry(unprocessed);
+				//~ ClauseRemoveEvaluations(unprocessed);
+				//~ ClauseSetInsert(proofstate->archive, unprocessed);
+				//~ removed++;
+				//~ unprocessed_handle = proofstate->unprocessed->anchor;
+			//~ }
+		//~ }
+		//printf("%d APR-irrelevant clauses removed\n", removed);
+		if (removed > 0)
+		{
+			proofstate->state_is_complete = false;
+		}
 	}
 	PListFree(conjectures);
 }

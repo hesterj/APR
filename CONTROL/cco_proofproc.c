@@ -1452,77 +1452,6 @@ Clause_p ProcessClause(ProofState_p state, ProofControl_p control,
    ClauseRemoveEvaluations(clause);
    // Orphans have been excluded during selection now
    
-   /*
-   if ((ProofStateProcCardinality(state) > 0) && (state->processed_count % 1000 == 0))
-   {
-		printf("# Unprocessed: %ld ProofStateProcCardinality: %ld\n", 
-						state->unprocessed->members, 
-						ProofStateProcCardinality(state));
-		printf("## Attempting to build APR Graph... there are %ld axioms and %ld unprocessed\n", 
-						state->axioms->members, 
-						state->unprocessed->members);
-		printf("## Axioms remaining: %ld\n", state->axioms->members);
-		printf("## There are %ld clauses being used to create the graph.\n", state->unprocessed->members);
-		APRControl_p apr_control = APRBuildGraph(state->unprocessed);
-		APRGraphAddClauses(apr_control, state->axioms);
-		printf("## Successfully built APR graph.\n");
-		printf("## Number of unprocessed: %ld\n", state->unprocessed->members);
-		IntMap_p intmap = apr_control->map;
-		for (Clause_p ax_handle = state->axioms->anchor->succ;
-				ax_handle != state->axioms->anchor;
-				ax_handle = ax_handle->succ)
-		{
-			if (IntMapGetVal(intmap, ax_handle->ident - LONG_MIN) == NULL)
-			{
-				printf("Intmap error\n");
-				exit(0);
-			}
-		}
-		for (Clause_p unp_handle = state->unprocessed->anchor->succ;
-				unp_handle != state->unprocessed->anchor;
-				unp_handle = unp_handle->succ)
-		{
-			if (IntMapGetVal(intmap, unp_handle->ident - LONG_MIN) == NULL)
-			{
-				printf("Intmap error\n");
-				exit(0);
-			}
-		}
-		printf("## Attempting to find relevance of axioms in unprocessed\n");
-		long last_number_of_relevant = 0;
-		PStack_p relevant = APRRelevance(apr_control, state->axioms, 6);
-		if (state->unprocessed->members == 0)
-		{
-			printf("Error: No more unprocessed clauses 1.\n");
-			exit(0);
-		}
-		assert(state->axioms->members > 0);
-		ClauseSet_p new_relevant = ClauseSetAlloc();
-		for (PStackPointer p = 0; p < PStackGetSP(relevant); p++)
-		{
-			Clause_p relevant_clause = PStackPopP(relevant);
-			if (relevant_clause->set != state->axioms)
-			{
-				ClauseSetMoveClause(new_relevant, relevant_clause);
-			}
-		}
-		printf("## %ld relevant nonaxiom unprocessed clauses found at relevance %d.\n", new_relevant->members, 6);
-		assert(state->axioms->members > 0);
-		APRControlFree(apr_control);
-		if (new_relevant->members == 0)
-		{
-			printf("# Problem: No more relevant clauses.\n");
-			ClauseSetFree(new_relevant);
-		}
-		else
-		{
-			ClauseSetFree(state->unprocessed);
-			state->unprocessed = new_relevant;
-		}
-		PStackFree(relevant);
-	}
-	*/
-   
    ClauseSetProp(clause, CPIsProcessed);
    state->processed_count++;
 
@@ -1697,10 +1626,6 @@ Clause_p Saturate(ProofState_p state, ProofControl_p control, long
    {
       count++;
       unsatisfiable = ProcessClause(state, control, answer_limit);
-      if (count > 0 && count % 1000 == 0)
-      {
-			APRLiveProofStateProcess(state, 3); //JH
-		}
       if(unsatisfiable)
       {
          break;
@@ -1710,6 +1635,10 @@ Clause_p Saturate(ProofState_p state, ProofControl_p control, long
       {
          break;
       }
+      if (count > 0 && count % 1000 == 0)
+      {
+			//APRLiveProofStateProcess(state, 2); //JH
+		}
       if(control->heuristic_parms.sat_check_grounding != GMNoGrounding)
       {
          if(ProofStateCardinality(state) >= sat_check_size_limit)
