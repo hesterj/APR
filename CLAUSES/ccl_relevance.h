@@ -29,7 +29,8 @@ Changes
 #include <clb_plist.h>
 #include <ccl_findex.h>
 #include <ccl_proofstate.h>
-#include <omp.h>
+//#include <tensorflow/c/c_api.h>
+//#include <omp.h>
 
 /*---------------------------------------------------------------------*/
 /*                    Data type declarations                           */
@@ -135,7 +136,7 @@ PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance);
 PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list);
 
 PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance);
-PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance);
+PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance, bool equality);
 
 void APRProofStateProcess(ProofState_p proofstate, int relevance);
 void APRLiveProofStateProcess(ProofState_p proofstate, int relevance);

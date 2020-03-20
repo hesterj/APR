@@ -616,7 +616,7 @@ PStack_p APRBuildGraphConjectures(APRControl_p control, ClauseSet_p clauses, PLi
 	PStack_p relevant_stack = PStackAlloc();
 	PTree_p start_tree = NULL;
 	PTree_p already_visited = NULL;
-	fprintf(GlobalOut, "# Creating APR graph in ambient set of %ld nonequality axioms and %ld type 1 nodes.\n", clauses->members, 
+	fprintf(GlobalOut, "# Creating APR graph in ambient set of %ld clauses and %ld type 1 nodes.\n", clauses->members, 
 						 																							 PStackGetSP(control->type1_nodes));
 	PStack_p start_nodes = APRCollectNodesFromList(control, conjectures);
    APRGraphUpdateEdgesFromListStack(control, &already_visited,
@@ -1213,12 +1213,11 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
  *  
 */
 
-PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance)
+PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance, bool equality)
 {
-	fprintf(GlobalOut, "# Checking if set is equational.\n");
 	APRControl_p control = APRControlAlloc(sig, set->anchor->succ->literals->bank);
 	ClauseSet_p equality_axioms = NULL;
-	if (ClauseSetIsEquational(set))
+	if (equality && ClauseSetIsEquational(set))
 	{
 		equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank, 0);
 		control->equality_axioms = equality_axioms;
@@ -1228,10 +1227,8 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 	}
 	else
 	{
-		fprintf(GlobalOut, "# Axioms nonequational\n");
+		fprintf(GlobalOut, "# Axioms nonequational or equality axioms disabled\n");
 	}
-	//int conjectures_added = APRGraphAddClausesList(control, list);
-	//assert(conjectures_added);
 	int search_distance = (2*relevance) - 2;
 	PStack_p relevant = APRBuildGraphConjectures(control, 
 																set, 
@@ -1274,7 +1271,7 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 		PStack_p relevant = APRRelevanceNeighborhood(proofstate->signature,
 																	proofstate->axioms,
 																	conjectures,
-																	relevance);
+																	relevance, true);
 		fprintf(GlobalOut, "# Relevant axioms at relevance distance %d: %ld of %ld\n", relevance, 
 																								 PStackGetSP(relevant), 
 																								 proofstate->axioms->members);
@@ -1301,6 +1298,8 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
  *  Causes incompleteness if unprocessed clauses are deleted.
  *  Keeps unprocessed clauses within relevance distance of
  *  the conjectures.  Discards other clauses.
+ * 
+ *  Does not create equality axioms for live proof state processing.
 */
 
 void APRLiveProofStateProcess(ProofState_p proofstate, int relevance)
@@ -1318,7 +1317,7 @@ void APRLiveProofStateProcess(ProofState_p proofstate, int relevance)
 		PStack_p relevant = APRRelevanceNeighborhood(proofstate->signature,
 																	proofstate->unprocessed,
 																	conjectures,
-																	relevance);
+																	relevance, false);
 		printf("# Relevant unprocessed at relevance distance %d: %ld of %ld\n", relevance, 
 																								 PStackGetSP(relevant), 
 																								 proofstate->unprocessed->members);

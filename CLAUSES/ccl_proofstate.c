@@ -234,6 +234,9 @@ ProofState_p ProofStateAlloc(FunctionProperties free_symb_prop)
 
    handle->filter_orphans_base   = 0;
    handle->forward_contract_base = 0;
+   
+   handle->live_apr_relevant = false;
+   handle->live_apr_relevance_limit = 0;
 
    handle->gc_count             = 0;
    handle->gc_used_count        = 0;

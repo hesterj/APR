@@ -1635,9 +1635,10 @@ Clause_p Saturate(ProofState_p state, ProofControl_p control, long
       {
          break;
       }
-      if (count > 0 && count % 1000 == 0)
+      if (state->live_apr_relevant && count > 0 && count % 1000 == 0)
       {
-			//APRLiveProofStateProcess(state, 2); //JH
+			assert(state->live_apr_relevance_limit);
+			APRLiveProofStateProcess(state, state->live_apr_relevance_limit); //JH
 		}
       if(control->heuristic_parms.sat_check_grounding != GMNoGrounding)
       {

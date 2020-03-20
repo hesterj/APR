@@ -113,7 +113,11 @@ typedef struct proofstatecell
    unsigned long long forward_contract_base; /* Number of processed
                                                 clauses at last
                                                 forward-contraction */
-
+                                                
+   /* Live alternating path relevance processing control */
+   bool live_apr_relevant;
+	int live_apr_relevance_limit;
+	
    /* The following are only set by ProofStateAnalyse() after
       DerivationCompute() at the end of the proof search. */
    unsigned long gc_count;

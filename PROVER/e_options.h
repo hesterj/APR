@@ -181,6 +181,7 @@ typedef enum
    OPT_PRINT_TYPES,
    OPT_APP_ENCODE,
    OPT_ALTERN_PATH_REL,
+   OPT_LIVE_ALTERN_PATH_REL,
    OPT_DUMMY
 }OptionCodes;
 
@@ -1363,11 +1364,18 @@ OptCell opts[] =
     "prints encoded input problem and exits."},
     
    {OPT_ALTERN_PATH_REL,
-    '\0', "alternating-path-relevance",
+    '\0', "apr",
     OptArg, "3",
     "Create an alternating path relevance graph from the axioms. "
     "The integer argument specifies the distance used to create an APR "
     "neighborhood of the conjectures.  Default value is 3."},
+    
+   {OPT_LIVE_ALTERN_PATH_REL,
+    '\0', "lapr",
+    OptArg, "2",
+    "Enables live proof state processing. "
+    "The integer argument specifies the distance used to create an APR "
+    "neighborhood of the conjectures in the unprocessed clauses.  Default value is 2."},
 
    {OPT_NOOPT,
     '\0', NULL,

@@ -74,7 +74,8 @@ bool              print_sat = false,
    conjectures_are_questions = false,
    app_encode = false,
    strategy_scheduling = false,
-   apr_relevant = false;
+   apr_relevant = false,
+   live_apr_relevant = false;
 ProofOutput       print_derivation = PONone;
 long              proc_training_data;
 
@@ -92,7 +93,8 @@ long long tb_insert_limit = LLONG_MAX;
 
 int eqdef_incrlimit = DEFAULT_EQDEF_INCRLIMIT,
    force_deriv_output = 0,
-   apr_relevance_limit = 0;
+   apr_relevance_limit = 0,
+   live_apr_relevance_limit = 0;
 char              *outdesc = DEFAULT_OUTPUT_DESCRIPTOR,
    *filterdesc = DEFAULT_FILTER_DESCRIPTOR;
 PStack_p          wfcb_definitions, hcb_definitions;
@@ -479,6 +481,11 @@ int main(int argc, char* argv[])
 		APRProofStateProcess(proofstate, apr_relevance_limit);
 		assert(proofstate->axioms->members > 0);
    }
+   if (live_apr_relevant)
+   {
+		proofstate->live_apr_relevant = live_apr_relevant;
+		proofstate->live_apr_relevance_limit = live_apr_relevance_limit;
+	}
 	
    raw_clause_no = proofstate->axioms->members;
    ProofStateLoadWatchlist(proofstate, watchlist_filename, parse_format);
@@ -882,6 +889,10 @@ CLState_p process_options(int argc, char* argv[])
       case OPT_ALTERN_PATH_REL:
 				apr_relevant = true;
 				apr_relevance_limit = CLStateGetIntArg(handle, arg);
+				break;
+		case OPT_LIVE_ALTERN_PATH_REL:
+				live_apr_relevant = true;
+				live_apr_relevance_limit = CLStateGetIntArg(handle, arg);
 				break;
       case OPT_HELP:
             print_help(stdout);
