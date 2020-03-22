@@ -548,6 +548,7 @@ APRControl_p APRControlAlloc(Sig_p sig, TB_p terms)
 	FixedDArrayInitialize(handle->substitution_axiom_characteristic, 0);
 	handle->sig = sig;
 	handle->terms = terms;
+	handle->equality = false;
 	return handle;
 }
 
@@ -1217,9 +1218,11 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 {
 	APRControl_p control = APRControlAlloc(sig, set->anchor->succ->literals->bank);
 	ClauseSet_p equality_axioms = NULL;
+	control->equality = equality;
 	if (equality && ClauseSetIsEquational(set))
 	{
-		equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank, 0);
+		equality_axioms = ClauseSetAlloc();
+		//equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank, 0);
 		control->equality_axioms = equality_axioms;
 		ClauseSetSetProp(equality_axioms, CPDeleteClause);
 		fprintf(GlobalOut, "# Building initial APR graph with %ld extra equality axiom(s)\n", equality_axioms->members);
@@ -1257,7 +1260,7 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
  *  conjectures.  Deletes the original clauseset of axioms
 */
 
-void APRProofStateProcess(ProofState_p proofstate, int relevance)
+void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality)
 {
 	//printf("# Alternating path relevance distance: %d\n", relevance);
 	PList_p conjectures = PListAlloc();
@@ -1271,7 +1274,7 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance)
 		PStack_p relevant = APRRelevanceNeighborhood(proofstate->signature,
 																	proofstate->axioms,
 																	conjectures,
-																	relevance, true);
+																	relevance, equality);
 		fprintf(GlobalOut, "# Relevant axioms at relevance distance %d: %ld of %ld\n", relevance, 
 																								 PStackGetSP(relevant), 
 																								 proofstate->axioms->members);

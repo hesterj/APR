@@ -89,6 +89,7 @@ long ProofStatePreprocess(ProofState_p state, long level);
 
 typedef struct aprcontrolcell
 {
+	bool equality;
 	IntMap_p map;
 	PStack_p buckets;
 	PStack_p graph_nodes;
@@ -138,7 +139,7 @@ PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list);
 PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance);
 PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance, bool equality);
 
-void APRProofStateProcess(ProofState_p proofstate, int relevance);
+void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality);
 void APRLiveProofStateProcess(ProofState_p proofstate, int relevance);
 ClauseSet_p EqualityAxioms(TB_p bank, bool substitution);
 

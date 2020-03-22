@@ -182,6 +182,7 @@ typedef enum
    OPT_APP_ENCODE,
    OPT_ALTERN_PATH_REL,
    OPT_LIVE_ALTERN_PATH_REL,
+   OPT_ALTERN_PATH_REL_EQUALITY,
    OPT_DUMMY
 }OptionCodes;
 
@@ -1376,7 +1377,12 @@ OptCell opts[] =
     "Enables live proof state processing. "
     "The integer argument specifies the distance used to create an APR "
     "neighborhood of the conjectures in the unprocessed clauses.  Default value is 2."},
-
+	
+	{OPT_ALTERN_PATH_REL_EQUALITY,
+	'\0', "disable-apr-eq",
+	NoArg, NULL,
+	"Disables equality axiom creation for alternating path axiom filtering "},
+	
    {OPT_NOOPT,
     '\0', NULL,
     NoArg, NULL,

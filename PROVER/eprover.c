@@ -75,7 +75,9 @@ bool              print_sat = false,
    app_encode = false,
    strategy_scheduling = false,
    apr_relevant = false,
+   apr_equality = true,
    live_apr_relevant = false;
+   
 ProofOutput       print_derivation = PONone;
 long              proc_training_data;
 
@@ -478,7 +480,7 @@ int main(int argc, char* argv[])
    
    if (apr_relevant)
    {
-		APRProofStateProcess(proofstate, apr_relevance_limit);
+		APRProofStateProcess(proofstate, apr_relevance_limit, apr_equality);
 		assert(proofstate->axioms->members > 0);
    }
    if (live_apr_relevant)
@@ -883,6 +885,9 @@ CLState_p process_options(int argc, char* argv[])
    {
       switch(handle->option_code)
       {
+		case OPT_ALTERN_PATH_REL_EQUALITY:
+				apr_equality = false;
+				break;
       case OPT_VERBOSE:
             Verbose = CLStateGetIntArg(handle, arg);
             break;
