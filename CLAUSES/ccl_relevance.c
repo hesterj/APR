@@ -607,24 +607,34 @@ PStack_p APRBuildGraphConjectures(APRControl_p control, ClauseSet_p clauses, PLi
 		handle = handle->succ;
 	}
 	
-	//~ Clause_p bucket_test_clause = conjectures->succ->key.p_val;
-	//~ printf("# BUCKET TEST CLAUSE: ");ClausePrint(GlobalOut, bucket_test_clause, true);printf("\n");
-	//~ PStack_p bucket_test = IntMapGetVal(control->map, bucket_test_clause->ident - LONG_MIN);
-	//~ printf("# BUCKET POINTER: %p\n", bucket_test);
-	
 	// Now we need to actually build the graph.
 	// Add all possible edges from the conjecture nodes.
 	PStack_p relevant_stack = PStackAlloc();
 	PTree_p start_tree = NULL;
 	PTree_p already_visited = NULL;
-	fprintf(GlobalOut, "# Creating APR graph in ambient set of %ld clauses and %ld type 1 nodes.\n", clauses->members, 
-						 																							 PStackGetSP(control->type1_nodes));
 	PStack_p start_nodes = APRCollectNodesFromList(control, conjectures);
+	
+	// Make sure the conjecture clauses are marked as relevant
+	for (PStackPointer p=0; p<PStackGetSP(start_nodes); p++)
+	{
+		APR_p start_node = PStackElementP(start_nodes, p);
+		Clause_p clause_handle = start_node->clause;
+		if (!ClauseQueryProp(clause_handle, CPIsAPRRelevant))
+		{
+			ClauseSetProp(clause_handle, CPIsAPRRelevant);
+			PStackPushP(relevant_stack, clause_handle);
+		}
+	}
+	
+	fprintf(GlobalOut, "# Creating %ld %d-neighborhoods in graph of %ld clauses and %ld literals.\n", PStackGetSP(start_nodes),
+																																			distance,
+																																			clauses->members,
+																																			PStackGetSP(control->type1_nodes));
    APRGraphUpdateEdgesFromListStack(control, &already_visited,
 													 start_nodes, 
 													 relevant_stack, 
 													 distance);
-   fprintf(GlobalOut, "# Relevancy graph completed\n");
+   fprintf(GlobalOut, "# Relevancy graph completed.  %ld relevant total.\n", PStackGetSP(relevant_stack));
 	PStackFree(start_nodes);
 	PTreeFree(start_tree);
 	PTreeFree(already_visited);
@@ -662,15 +672,10 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 	fprintf(GlobalOut, "# Updating APR edges d:%d sn:%ld\n", distance, PStackGetSP(start_nodes_stack));
 	for (PStackPointer graph_iterator = 0; graph_iterator<PStackGetSP(start_nodes_stack); graph_iterator++)
 	{
-		fprintf(GlobalOut, "\r# %ld remaining at depth", PStackGetSP(start_nodes_stack)-graph_iterator);
-		fflush(GlobalOut);
+		//fprintf(GlobalOut, "\r# %ld remaining at depth", PStackGetSP(start_nodes_stack)-graph_iterator);
+		//fflush(GlobalOut);
 		APR_p current_node = PStackElementP(start_nodes_stack, graph_iterator);
 		Clause_p current_clause = current_node->clause;
-		if (!ClauseQueryProp(current_clause, CPIsAPRRelevant))
-		{
-			ClauseSetProp(current_clause, CPIsAPRRelevant);
-			PStackPushP(relevant, current_clause);
-		}
 		Eqn_p current_literal = current_node->literal;
 		if (PStackGetSP(current_node->edges) > 0)
 		{
@@ -686,6 +691,7 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 		
 		assert(current_node);
 		assert(current_clause);
+		assert(ClauseQueryProp(current_clause, CPIsAPRRelevant));
 		assert(current_literal);
 		assert(current_edges);
 		assert(current_node->type);
@@ -743,22 +749,30 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 				  t1_iter++)
 			{
 				APR_p visited_node = PStackElementP(type1stack, t1_iter);
+				Clause_p visited_node_clause = visited_node->clause;
 				// Do not search from already visited nodes
-				if (visited_node->visited) continue;
+				//if (visited_node->visited) continue;
+				assert(!(visited_node->visited));
 				// Do not attempt to unify with equality axioms at the final step
 				if (distance == 0 && visited_node->equality_node) continue;
 				Eqn_p visited_literal = visited_node->literal;
 				if (APRComplementarilyUnifiable(current_literal, visited_literal))
 				{
+					//printf("# Successful unification\n");
 					visited_node->visited = true;
 					PStackPushP(current_edges, visited_node);
 					PStackPushP(new_start_nodes, visited_node);
 					PStackDiscardElement(type1stack, t1_iter);
+					if (!ClauseQueryProp(visited_node_clause, CPIsAPRRelevant))
+					{
+						ClauseSetProp(visited_node_clause, CPIsAPRRelevant);
+						PStackPushP(relevant, visited_node_clause);
+					}
 					//if (type1stack != control->type1_nodes)
 					if (type1stack == control->type1_equality_nodes)
 					{
 						assert(type1stack != control->type1_nodes);
-						printf("t1_iter: %ld SP of type1 nodes: %ld\n", t1_iter, PStackGetSP(control->type1_nodes));
+						printf("# t1_iter: %ld SP of type1 nodes: %ld\n", t1_iter, PStackGetSP(control->type1_nodes));
 						PStackDiscardElement(control->type1_nodes, t1_iter);
 					}
 					t1_iter--;
@@ -768,7 +782,8 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 		}
 	}
 	fprintf(GlobalOut, "\n");
-	//printf("Finished iterating\n");
+	printf("# Finished iterating\n");
+	printf("# %ld edges created\n", num_edges);
 	num_edges += APRGraphUpdateEdgesFromListStack(control,
 														  already_visited,
 														  new_start_nodes, 
@@ -798,14 +813,17 @@ PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list)
 		{
 			current_ident = current_ident - LONG_MIN;
 		}
-		printf("# Searching for bucket of ");ClausePrint(GlobalOut, clause_handle, true); printf("\n");
+		printf("# Searching for bucket of ");ClausePrint(GlobalOut, clause_handle, true);
 		PStack_p handle_bucket = IntMapGetVal(map, current_ident);
 		if (handle_bucket == NULL)  // If there is no bucket for this clause, create its nodes and add the bucket
 		{
+			printf(" failed");
 			APRGraphAddClausesList(control, list);
 			handle_bucket = IntMapGetVal(map, current_ident);
 		}
+		printf("\n");
 		assert(handle_bucket);
+		assert(PStackGetSP(handle_bucket));
 		for (PStackPointer p = 0; p < PStackGetSP(handle_bucket); p++)
 		{
 			APR_p clause_node = PStackElementP(handle_bucket, p);
@@ -922,7 +940,6 @@ bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b)
 	if (EqnIsNegative(a) && EqnIsNegative(b)) return false;
 	
 	Eqn_p a_disj = EqnCopyDisjoint(a);
-
 	//printf("a_disj: ");EqnTSTPPrint(GlobalOut, a_disj, true);printf("\n");
 	//printf("b: ");EqnTSTPPrint(GlobalOut, b, true);printf("\n");
 
@@ -1232,7 +1249,10 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 	{
 		fprintf(GlobalOut, "# Axioms nonequational or equality axioms disabled\n");
 	}
+	
+	// Set the number of steps to take in building the graph
 	int search_distance = (2*relevance) - 2;
+	
 	PStack_p relevant = APRBuildGraphConjectures(control, 
 																set, 
 																list, 
@@ -1247,6 +1267,7 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 		}
 		else 
 		{
+			//if (ClauseIsConjecture(relevant_clause)) printf("# Delete clause is conjecture error\n");
 			assert(ClauseQueryProp(relevant_clause, CPDeleteClause));
 			ClauseDelProp(relevant_clause, CPDeleteClause);
 		}
@@ -1265,7 +1286,7 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality)
 	//printf("# Alternating path relevance distance: %d\n", relevance);
 	PList_p conjectures = PListAlloc();
 	PList_p non_conjectures = PListAlloc();
-	ClauseSetSplitConjectures(proofstate->axioms, 
+	long conj_found = ClauseSetSplitConjectures(proofstate->axioms, 
 									  conjectures, 
 									  non_conjectures);
 	PListFree(non_conjectures);
@@ -1288,6 +1309,13 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality)
 			Clause_p relevant_clause = PStackElementP(relevant, p);
 			assert(relevant_clause);
 			ClauseSetMoveClause(relevant_set, relevant_clause);
+		}
+		printf("Axioms debug test: %ld\n", proofstate->axioms->members);
+		ClausePrint(GlobalOut, proofstate->axioms->anchor->succ, true);printf("\n");
+		if (ClauseIsConjecture(proofstate->axioms->anchor->succ))
+		{
+			printf("# Irrelevant conjecture error\n");
+			assert(ClauseQueryProp(proofstate->axioms->anchor->succ, CPIsAPRRelevant));
 		}
 		ClauseSetFree(proofstate->axioms);
 		proofstate->axioms = relevant_set;

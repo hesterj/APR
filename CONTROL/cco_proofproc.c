@@ -1635,7 +1635,7 @@ Clause_p Saturate(ProofState_p state, ProofControl_p control, long
       {
          break;
       }
-      if (state->live_apr_relevant && count > 0 && count % 1000 == 0)
+      if (state->live_apr_relevant && count > 0 && count % 20000 == 0)
       {
 			assert(state->live_apr_relevance_limit);
 			APRLiveProofStateProcess(state, state->live_apr_relevance_limit); //JH
