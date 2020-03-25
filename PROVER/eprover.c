@@ -477,17 +477,6 @@ int main(int argc, char* argv[])
    {
       VERBOUT("CNFization done\n");
    }
-   
-   if (apr_relevant)
-   {
-		APRProofStateProcess(proofstate, apr_relevance_limit, apr_equality);
-		assert(proofstate->axioms->members > 0);
-   }
-   if (live_apr_relevant)
-   {
-		proofstate->live_apr_relevant = live_apr_relevant;
-		proofstate->live_apr_relevance_limit = live_apr_relevance_limit;
-	}
 	
    raw_clause_no = proofstate->axioms->members;
    ProofStateLoadWatchlist(proofstate, watchlist_filename, parse_format);
@@ -507,6 +496,24 @@ int main(int argc, char* argv[])
                                             eqdef_incrlimit,
                                             eqdef_maxclauses);
    }
+   
+   printf("# Clauses removed by preprocessing %ld\n", preproc_removed);
+   ProofStatePrint(GlobalOut, proofstate); // JH
+   
+   double current_time = GetTotalCPUTime();
+   if (apr_relevant)
+   {
+		APRProofStateProcess(proofstate, apr_relevance_limit, apr_equality);
+		assert(proofstate->axioms->members > 0);
+   }
+   if (live_apr_relevant)
+   {
+		proofstate->live_apr_relevant = live_apr_relevant;
+		proofstate->live_apr_relevance_limit = live_apr_relevance_limit;
+	}
+	double apr_time = GetTotalCPUTime() - current_time;
+	fprintf(GlobalOut, "# APR time       : %.3f s\n", apr_time);
+
 
    proofcontrol = ProofControlAlloc();
    ProofControlInit(proofstate, proofcontrol, h_parms,
@@ -542,6 +549,7 @@ int main(int argc, char* argv[])
                          LLONG_MAX, LONG_MAX);
       fprintf(GlobalOut, "# Presaturation interreduction done\n");
       proofcontrol->heuristic_parms.selection_strategy = sel_strat;
+      
       if(!success)
       {
          ProofStateResetProcessed(proofstate, proofcontrol);

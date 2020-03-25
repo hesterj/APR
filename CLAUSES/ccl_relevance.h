@@ -127,6 +127,7 @@ int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses, bool equality)
 int APRGraphAddClausesList(APRControl_p control, PList_p clauses);
 bool APRGraphAddNodes(APRControl_p control, Clause_p clause, bool equality);
 long APRGraphUpdateEdges(APRControl_p control);
+long APRGraphUpdateEdgesDeleteOld(APRControl_p control);
 long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 												  PTree_p *already_visited,
 												  PStack_p start_nodes,

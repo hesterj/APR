@@ -751,8 +751,7 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 				APR_p visited_node = PStackElementP(type1stack, t1_iter);
 				Clause_p visited_node_clause = visited_node->clause;
 				// Do not search from already visited nodes
-				//if (visited_node->visited) continue;
-				assert(!(visited_node->visited));
+				if (visited_node->visited) continue;
 				// Do not attempt to unify with equality axioms at the final step
 				if (distance == 0 && visited_node->equality_node) continue;
 				Eqn_p visited_literal = visited_node->literal;
@@ -840,6 +839,96 @@ PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list)
 
 /*  Updates all possible edges of the graph corresponding to control.
  *  Deletes all old edges. 
+ *  Returns the new number of edges.
+ * 
+ *  Slow on big graphs!!!
+*/
+
+long APRGraphUpdateEdgesDeleteOld(APRControl_p control)
+{
+	printf("# Updating all APR edges\n");
+	PStack_p graph_nodes = control->graph_nodes;
+	IntMap_p map = control->map;
+	long num_edges = 0;
+	for (PStackPointer graph_iterator = 0; graph_iterator<PStackGetSP(graph_nodes); graph_iterator++)
+	{
+		APR_p current_node = PStackElementP(graph_nodes, graph_iterator);
+		Clause_p current_clause = current_node->clause;
+		Eqn_p current_literal = current_node->literal;
+		if (PStackGetSP(current_node->edges) > 0)
+		{
+			PStackFree(current_node->edges);
+			current_node->edges = PStackAlloc();
+		}
+		PStack_p current_edges = current_node->edges;
+		long current_ident = current_clause->ident;
+		if (current_ident < 0)
+		{
+			current_ident = current_ident - LONG_MIN;
+		}
+		
+		assert(current_node);
+		assert(current_clause);
+		assert(current_literal);
+		assert(current_edges);
+		assert(current_node->type);
+		assert(current_ident > 0);
+		
+		if (current_node->type == 1)
+		{
+			// Create type 2 (intra-clause) edges
+			PStack_p current_bucket = IntMapGetVal(map, current_ident);
+			assert(current_bucket);
+			
+			for (PStackPointer bucket_iterator = 0; bucket_iterator < PStackGetSP(current_bucket); bucket_iterator++)
+			{
+				APR_p bucket_node = PStackElementP(current_bucket, bucket_iterator);
+				assert(bucket_node);
+				assert(bucket_node->type);
+				if (bucket_node->type == 1) // Wrong type of node
+				{
+					continue;
+				}
+				else if (bucket_node->type == 2)
+				{
+					if (bucket_node->literal != current_literal)
+					{
+						assert(bucket_node->clause == current_clause);
+						PStackPushP(current_edges, bucket_node);
+						num_edges++;
+					}
+				}
+			}
+		}
+		else if (current_node->type == 2)
+		{
+			// Create type 1 (inter-clause) edges
+			// Iterate again over the nodes
+			for (PStackPointer graph_iterator2 = 0; graph_iterator2 < PStackGetSP(control->type1_nodes); graph_iterator2++)
+			{
+				APR_p visited_node = PStackElementP(control->type1_nodes, graph_iterator2);
+				assert(visited_node);
+				if (visited_node->clause == current_clause)
+				{
+					continue;
+				}
+				else if (visited_node->type == 1)
+				{
+					// Check to see if we can make a type 1 edge
+					if (APRComplementarilyUnifiable(current_literal, visited_node->literal))
+					{
+						PStackPushP(current_edges, visited_node);
+						num_edges++;
+					}
+				}
+			}
+		}
+	}
+	return num_edges;
+}
+
+/*  Updates all possible edges of the graph corresponding to control.
+ *  
  *  Returns the new number of edges.
  * 
  *  Slow on big graphs!!!
@@ -1310,8 +1399,6 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality)
 			assert(relevant_clause);
 			ClauseSetMoveClause(relevant_set, relevant_clause);
 		}
-		printf("Axioms debug test: %ld\n", proofstate->axioms->members);
-		ClausePrint(GlobalOut, proofstate->axioms->anchor->succ, true);printf("\n");
 		if (ClauseIsConjecture(proofstate->axioms->anchor->succ))
 		{
 			printf("# Irrelevant conjecture error\n");
@@ -1335,7 +1422,6 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality)
 
 void APRLiveProofStateProcess(ProofState_p proofstate, int relevance)
 {
-	//printf("# Alternating path relevance distance: %d\n", relevance);
 	assert(relevance);
 	PList_p conjectures = PListAlloc();
 	PList_p non_conjectures = PListAlloc();
@@ -1368,30 +1454,6 @@ void APRLiveProofStateProcess(ProofState_p proofstate, int relevance)
 		ClauseSetFree(proofstate->unprocessed);
 		proofstate->unprocessed = new_unprocessed;
 		printf("Remaining members of unprocessed: %ld\n", proofstate->unprocessed->members);
-		//~ for (PStackPointer p=0; p<PStackGetSP(relevant); p++)
-		//~ {
-			//~ Clause_p relevant_clause = PStackElementP(relevant, p);
-			//~ assert(ClauseQueryProp(relevant_clause, CPIsAPRRelevant));
-			//~ //assert(relevant_clause);
-			//~ //ClauseSetMoveClause(relevant_set, relevant_clause);
-		//~ }
-		//~ // Remove non APR relevant unprocessed clauses
-		//~ int removed = 0;
-		//~ for (Clause_p unprocessed_handle = proofstate->unprocessed->anchor->succ;
-				//~ unprocessed_handle != proofstate->unprocessed->anchor;
-				//~ unprocessed_handle = unprocessed_handle->succ)
-		//~ {
-			//~ Clause_p unprocessed = unprocessed_handle;
-			//~ if (!ClauseQueryProp(unprocessed, CPIsAPRRelevant))
-			//~ {
-				//~ ClauseSetExtractEntry(unprocessed);
-				//~ ClauseRemoveEvaluations(unprocessed);
-				//~ ClauseSetInsert(proofstate->archive, unprocessed);
-				//~ removed++;
-				//~ unprocessed_handle = proofstate->unprocessed->anchor;
-			//~ }
-		//~ }
-		//printf("%d APR-irrelevant clauses removed\n", removed);
 		if (removed > 0)
 		{
 			proofstate->state_is_complete = false;
