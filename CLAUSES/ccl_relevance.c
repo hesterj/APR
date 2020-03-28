@@ -1316,6 +1316,9 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 																list, 
 																search_distance);
 	PStack_p relevant_without_equality_axs = PStackAlloc();
+	
+	APRGraphCreateDOT(control);
+	
 	for (PStackPointer p=0 ; p<PStackGetSP(relevant); p++)
 	{
 		Clause_p relevant_clause = PStackElementP(relevant, p);
@@ -1331,7 +1334,6 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 		}
 	}
 	PStackFree(relevant);
-	APRGraphCreateDOT(control);
 	APRControlFree(control);
 	return relevant_without_equality_axs;
 }
@@ -1732,7 +1734,7 @@ Clause_p ClauseCreateSubstitutionAxiom(APRControl_p control, Sig_p sig, FunCode 
 
 long APRGraphCreateDOT(APRControl_p control)
 {
-	FILE *dotgraph = fopen("/home/hesterj/Projects/APRTESTING/DOT/graph", "w");
+	FILE *dotgraph = fopen("/home/hesterj/Projects/APRTESTING/DOT/graph.dot", "w");
 	if (dotgraph == NULL)
 	{
 		printf("# File failure\n");
@@ -1740,7 +1742,7 @@ long APRGraphCreateDOT(APRControl_p control)
 	}
 	else
 	{
-		printf("# Printing DOT APR graph to ~/Projects/APRTESTING/DOT/graph\n");
+		printf("# Printing DOT APR graph to ~/Projects/APRTESTING/DOT/graph.dot\n");
 	}
 	
 	fprintf(dotgraph, "digraph aprgraph {\n");
@@ -1749,12 +1751,28 @@ long APRGraphCreateDOT(APRControl_p control)
 	for (PStackPointer p=0; p<PStackGetSP(control->graph_nodes); p++)
 	{
 		APR_p handle = PStackElementP(control->graph_nodes, p);
+		Clause_p handle_clause = handle->clause;
 		long handle_id = handle->id;
+		if (ClauseIsConjecture(handle_clause))
+		{
+			fprintf(dotgraph,"   %ld [color=Blue]\n", handle_id);
+		}
+		else if (ClauseQueryProp(handle_clause, CPDeleteClause))
+		{
+			fprintf(dotgraph,"   %ld [color=Red, shape=box]\n", handle_id);
+		}
 		for (PStackPointer q=0; q<PStackGetSP(handle->edges); q++)
 		{
 			APR_p edge = PStackElementP(handle->edges, q);
 			long edge_id = edge->id;
-			fprintf(dotgraph,"   %ld -> %ld\n", handle_id, edge_id);
+			if (edge->type == 1)
+			{
+				fprintf(dotgraph,"   %ld -> %ld [color=Blue]\n", handle_id, edge_id);
+			}
+			else
+			{
+				fprintf(dotgraph,"   %ld -> %ld [color=Green]\n", handle_id, edge_id);
+			}
 		}
 		
 	}
