@@ -89,6 +89,7 @@ long ProofStatePreprocess(ProofState_p state, long level);
 
 typedef struct aprcontrolcell
 {
+	long max_used_node_id;
 	bool equality;
 	IntMap_p map;
 	PStack_p buckets;
@@ -105,6 +106,7 @@ typedef struct aprcontrolcell
 
 typedef struct aprcell
 {
+	long id;
 	short int type;
 	bool visited;
 	bool equality_node;
@@ -133,6 +135,7 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 												  PStack_p start_nodes,
 												  PStack_p relevant,
 												  int distance);
+long APRGraphCreateDOT(APRControl_p control);
 int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses, int relevance);
 PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance);
 PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list);

@@ -2308,6 +2308,28 @@ int ClauseCmpByPtr(const void* clause1, const void* clause2)
    return PCmp(*c1, *c2);
 }
 
+/*-----------------------------------------------------------------------
+//
+// Function: ClauseGetIdent()
+//
+//   Return the positive integer ident of clause.
+//
+// Global Variables: -
+//
+// Side Effects    : -
+//
+/----------------------------------------------------------------------*/
+
+long ClauseGetIdent(Clause_p clause)
+{
+	long ident = clause->ident;
+	if (ident<0)
+	{
+		ident = ident - LONG_MIN;
+	}
+	return ident;
+}
+
 
 /*-----------------------------------------------------------------------
 //

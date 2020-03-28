@@ -524,6 +524,7 @@ APR_p APRAlloc(short int type, Eqn_p literal, Clause_p clause, bool equality)
 	handle->clause = clause;
 	handle->edges = PStackAlloc();
 	handle->equality_node = equality;
+	handle->id = 0;
 	return handle;
 }
 
@@ -549,6 +550,7 @@ APRControl_p APRControlAlloc(Sig_p sig, TB_p terms)
 	handle->sig = sig;
 	handle->terms = terms;
 	handle->equality = false;
+	handle->max_used_node_id = 0;
 	return handle;
 }
 
@@ -683,11 +685,7 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 		}
 		
 		PStack_p current_edges = current_node->edges;
-		long current_ident = current_clause->ident;
-		if (current_ident < 0)
-		{
-			current_ident = current_ident - LONG_MIN;
-		}
+		long current_ident = ClauseGetIdent(current_clause);
 		
 		assert(current_node);
 		assert(current_clause);
@@ -807,11 +805,7 @@ PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list)
 	while (list_handle != list)
 	{
 		Clause_p clause_handle = list_handle->key.p_val;
-		long current_ident = clause_handle->ident;
-		if (current_ident < 0)
-		{
-			current_ident = current_ident - LONG_MIN;
-		}
+		long current_ident = ClauseGetIdent(clause_handle);
 		printf("# Searching for bucket of ");ClausePrint(GlobalOut, clause_handle, true);
 		PStack_p handle_bucket = IntMapGetVal(map, current_ident);
 		if (handle_bucket == NULL)  // If there is no bucket for this clause, create its nodes and add the bucket
@@ -861,11 +855,7 @@ long APRGraphUpdateEdgesDeleteOld(APRControl_p control)
 			current_node->edges = PStackAlloc();
 		}
 		PStack_p current_edges = current_node->edges;
-		long current_ident = current_clause->ident;
-		if (current_ident < 0)
-		{
-			current_ident = current_ident - LONG_MIN;
-		}
+		long current_ident = ClauseGetIdent(current_clause);
 		
 		assert(current_node);
 		assert(current_clause);
@@ -951,11 +941,7 @@ long APRGraphUpdateEdges(APRControl_p control)
 			current_node->edges = PStackAlloc();
 		}
 		PStack_p current_edges = current_node->edges;
-		long current_ident = current_clause->ident;
-		if (current_ident < 0)
-		{
-			current_ident = current_ident - LONG_MIN;
-		}
+		long current_ident = ClauseGetIdent(current_clause);
 		
 		assert(current_node);
 		assert(current_clause);
@@ -1055,11 +1041,7 @@ int APRGraphAddClauses(APRControl_p control, ClauseSet_p clauses, bool equality)
 	Clause_p handle = clauses->anchor->succ;
 	while (handle != clauses->anchor)
 	{
-		long handle_ident = handle->ident;
-		if (handle_ident < 0)
-		{
-			handle_ident = handle_ident - LONG_MIN;
-		}
+		long handle_ident = ClauseGetIdent(handle);
 		if (IntMapGetVal(map, handle_ident) == NULL)
 		{
 			APRGraphAddNodes(control, handle, equality);
@@ -1086,11 +1068,7 @@ int APRGraphAddClausesList(APRControl_p control, PList_p clauses)
 	while (handle != anchor)
 	{
 		Clause_p handle_clause = handle->key.p_val;
-		long handle_ident = handle_clause->ident;
-		if (handle_ident < 0)
-		{
-			handle_ident = handle_ident - LONG_MIN;
-		}
+		long handle_ident = ClauseGetIdent(handle_clause);
 		if (IntMapGetVal(map, handle_ident) == NULL) // Add the clause to the graph
 		{
 			APRGraphAddNodes(control, handle_clause, false);
@@ -1119,11 +1097,7 @@ bool APRGraphAddNodes(APRControl_p control, Clause_p clause, bool equality)
 	PStack_p graph_nodes = control->graph_nodes;
 	PStack_p clause_bucket = PStackAlloc();
 	PStackPushP(buckets, clause_bucket);
-	long handle_ident = clause->ident;
-	if(handle_ident < 0)
-	{
-		handle_ident = handle_ident - LONG_MIN;
-	}
+	long handle_ident = ClauseGetIdent(clause);
 	IntMapAssign(map, handle_ident, clause_bucket);
 	PStack_p clause_literals = EqnListToStack(clause->literals);
 	for (PStackPointer p = 0; p < PStackGetSP(clause_literals); p++)
@@ -1131,6 +1105,9 @@ bool APRGraphAddNodes(APRControl_p control, Clause_p clause, bool equality)
 		Eqn_p literal = PStackElementP(clause_literals, p);
 		APR_p type1 = APRAlloc(1, literal, clause, equality);
 		APR_p type2 = APRAlloc(2, literal, clause, equality);
+		type1->id = control->max_used_node_id + 1;
+		type2->id = control->max_used_node_id + 2;
+		control->max_used_node_id += 2;
 		PStackPushP(clause_bucket, type1);
 		PStackPushP(graph_nodes, type1);
 		PStackPushP(clause_bucket, type2);
@@ -1170,11 +1147,7 @@ PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance)
 	Clause_p handle = set->anchor->succ;
 	while (handle != set->anchor)
 	{
-		long handle_ident = handle->ident;
-		if (handle_ident < 0)
-		{
-			handle_ident = handle_ident - LONG_MIN;
-		}
+		long handle_ident = ClauseGetIdent(handle);
 		handle_bucket = IntMapGetVal(map, handle_ident);
 		assert(handle_bucket);
 		for (PStackPointer p = 0; p < PStackGetSP(handle_bucket); p++)
@@ -1283,11 +1256,7 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
 	{
 		list_counter++;
 		Clause_p handle = list_handle->key.p_val;
-		long handle_ident = handle->ident;
-		if (handle_ident < 0)
-		{
-			handle_ident = handle_ident - LONG_MIN;
-		}
+		long handle_ident = ClauseGetIdent(handle);
 		handle_bucket = IntMapGetVal(map, handle_ident);
 		assert(handle_bucket);
 		for (PStackPointer p = 0; p < PStackGetSP(handle_bucket); p++)
@@ -1362,6 +1331,7 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 		}
 	}
 	PStackFree(relevant);
+	APRGraphCreateDOT(control);
 	APRControlFree(control);
 	return relevant_without_equality_axs;
 }
@@ -1756,6 +1726,42 @@ Clause_p ClauseCreateSubstitutionAxiom(APRControl_p control, Sig_p sig, FunCode 
 	PStackFree(x_variables);
 	PStackFree(y_variables);
 	return subst_axiom_clause;
+}
+
+/*  Print the APR graph in DOT format to a file */
+
+long APRGraphCreateDOT(APRControl_p control)
+{
+	FILE *dotgraph = fopen("/home/hesterj/Projects/APRTESTING/DOT/graph", "w");
+	if (dotgraph == NULL)
+	{
+		printf("# File failure\n");
+		return 0;
+	}
+	else
+	{
+		printf("# Printing DOT APR graph to ~/Projects/APRTESTING/DOT/graph\n");
+	}
+	
+	fprintf(dotgraph, "digraph aprgraph {\n");
+	fprintf(dotgraph, "   graph [splines = true overlap=scale]\n");
+	
+	for (PStackPointer p=0; p<PStackGetSP(control->graph_nodes); p++)
+	{
+		APR_p handle = PStackElementP(control->graph_nodes, p);
+		long handle_id = handle->id;
+		for (PStackPointer q=0; q<PStackGetSP(handle->edges); q++)
+		{
+			APR_p edge = PStackElementP(handle->edges, q);
+			long edge_id = edge->id;
+			fprintf(dotgraph,"   %ld -> %ld\n", handle_id, edge_id);
+		}
+		
+	}
+	fprintf(dotgraph,"}\n");
+	fclose(dotgraph);
+	
+	return 1;
 }
 
 
