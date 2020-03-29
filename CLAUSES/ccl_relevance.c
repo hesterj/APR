@@ -1317,7 +1317,7 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 																search_distance);
 	PStack_p relevant_without_equality_axs = PStackAlloc();
 	
-	APRGraphCreateDOT(control);
+	APRGraphCreateDOTClauses(control);
 	
 	for (PStackPointer p=0 ; p<PStackGetSP(relevant); p++)
 	{
@@ -1782,6 +1782,171 @@ long APRGraphCreateDOT(APRControl_p control)
 	return 1;
 }
 
+/*  Print an approximation of the graph in DOT format to a file 
+ *  Instead of having literals as nodes, clauses are nodes.
+ * */
+
+long APRGraphCreateDOTClausesLabeled(APRControl_p control)
+{
+	FILE *dotgraph = fopen("/home/hesterj/Projects/APRTESTING/DOT/graph.dot", "w");
+	printf("# Number of buckets: %ld\n", PStackGetSP(control->buckets));
+	if (dotgraph == NULL)
+	{
+		printf("# File failure\n");
+		return 0;
+	}
+	else
+	{
+		printf("# Printing DOT APR graph to ~/Projects/APRTESTING/DOT/graph.dot\n");
+	}
+	
+	fprintf(dotgraph, "digraph aprgraph {\n");
+	fprintf(dotgraph, "   graph [splines = true overlap=scale]\n");
+	
+	for (PStackPointer p=0; p<PStackGetSP(control->buckets); p++)
+	{
+		PStack_p bucket = PStackElementP(control->buckets, p);
+		assert(PStackGetSP(bucket) > 0);
+		assert(bucket);
+		Clause_p handle_clause = APRGetBucketClause(bucket);
+		long handle_id = ClauseGetIdent(handle_clause);
+		if (ClauseIsConjecture(handle_clause))
+		{
+			fprintf(dotgraph,"   %ld [color=Green, label=\"", handle_id);
+			ClausePrint(dotgraph, handle_clause, true);
+			fprintf(dotgraph, "\"]\n");
+		}
+		else if (ClauseQueryProp(handle_clause, CPDeleteClause))
+		{
+			fprintf(dotgraph,"   %ld [color=Red, shape=box, label=\"", handle_id);
+			ClausePrint(dotgraph, handle_clause, true);
+			fprintf(dotgraph, "]\"\n");
+		}
+		else if (ClauseQueryProp(handle_clause, CPIsProofClause))
+		{
+			fprintf(dotgraph,"   %ld [color=Yellow, shape=box, label=\"", handle_id);
+			ClausePrint(dotgraph, handle_clause, true);
+			fprintf(dotgraph, "\"]\n");
+		}
+		else
+		{
+			fprintf(dotgraph,"   %ld [label=\"", handle_id);
+			ClausePrint(dotgraph, handle_clause, true);
+			fprintf(dotgraph, "\"]\n");
+		}
+		for (PStackPointer q=0; q<PStackGetSP(bucket); q++)
+		{
+			APR_p node = PStackElementP(bucket, q);
+			PStack_p edges = node->edges;
+			for (PStackPointer r=0; r<PStackGetSP(edges); r++)
+			{
+				APR_p edge = PStackElementP(edges, r);
+				Clause_p linked_clause = edge->clause;
+				if (linked_clause == handle_clause) continue;
+				long edge_id = ClauseGetIdent(linked_clause);
+				//long edge_id = edge->id;
+				if (edge->type == 1)
+				{
+					fprintf(dotgraph,"   %ld -> %ld [color=Blue, label=\"", handle_id, edge_id);
+					EqnTSTPPrint(dotgraph, edge->literal, true);
+					fprintf(dotgraph, "\"]\n");
+				}
+				else
+				{
+					fprintf(dotgraph,"   %ld -> %ld [color=Green]\n", handle_id, edge_id);
+					EqnTSTPPrint(dotgraph, edge->literal, true);
+					fprintf(dotgraph, "]\n");
+				}
+			}
+		}
+		
+	}
+	fprintf(dotgraph,"}\n");
+	fclose(dotgraph);
+	
+	return 1;
+}
+
+/*  As APRGraphCreateDOTClauses, but does not label the nodes.
+ * */
+
+long APRGraphCreateDOTClauses(APRControl_p control)
+{
+	FILE *dotgraph = fopen("/home/hesterj/Projects/APRTESTING/DOT/graph.dot", "w");
+	printf("# Number of buckets: %ld\n", PStackGetSP(control->buckets));
+	if (dotgraph == NULL)
+	{
+		printf("# File failure\n");
+		return 0;
+	}
+	else
+	{
+		printf("# Printing DOT APR graph to ~/Projects/APRTESTING/DOT/graph.dot\n");
+	}
+	
+	fprintf(dotgraph, "digraph aprgraph {\n");
+	fprintf(dotgraph, "   graph [splines = true overlap=scale]\n");
+	
+	for (PStackPointer p=0; p<PStackGetSP(control->buckets); p++)
+	{
+		PStack_p bucket = PStackElementP(control->buckets, p);
+		assert(PStackGetSP(bucket) > 0);
+		assert(bucket);
+		Clause_p handle_clause = APRGetBucketClause(bucket);
+		long handle_id = ClauseGetIdent(handle_clause);
+		if (ClauseIsConjecture(handle_clause))
+		{
+			fprintf(dotgraph,"   %ld [color=Green]\n", handle_id);
+		}
+		else if (ClauseQueryProp(handle_clause, CPDeleteClause))
+		{
+			fprintf(dotgraph,"   %ld [color=Red, shape=box]\n", handle_id);
+		}
+		else if (ClauseQueryProp(handle_clause, CPIsProofClause))
+		{
+			fprintf(dotgraph,"   %ld [color=Yellow]\n", handle_id);
+		}
+		else
+		{
+			fprintf(dotgraph,"   %ld\n", handle_id);
+		}
+		for (PStackPointer q=0; q<PStackGetSP(bucket); q++)
+		{
+			APR_p node = PStackElementP(bucket, q);
+			PStack_p edges = node->edges;
+			for (PStackPointer r=0; r<PStackGetSP(edges); r++)
+			{
+				APR_p edge = PStackElementP(edges, r);
+				Clause_p linked_clause = edge->clause;
+				if (linked_clause == handle_clause) continue;
+				long edge_id = ClauseGetIdent(linked_clause);
+				//long edge_id = edge->id;
+				if (edge->type == 1)
+				{
+					fprintf(dotgraph,"   %ld -> %ld [color=Blue]\n", handle_id, edge_id);
+				}
+				else
+				{
+					fprintf(dotgraph,"   %ld -> %ld [color=Green]\n", handle_id, edge_id);
+				}
+			}
+		}
+		
+	}
+	fprintf(dotgraph,"}\n");
+	fclose(dotgraph);
+	
+	return 1;
+}
+
+Clause_p APRGetBucketClause(PStack_p bucket)
+{
+	assert(PStackGetSP(bucket) > 0);
+	APR_p first_node = PStackElementP(bucket, 0);
+	assert(first_node);
+	Clause_p handle = first_node->clause;
+	return handle;
+}
 
 /*---------------------------------------------------------------------*/
 /*                        End of File                                  */

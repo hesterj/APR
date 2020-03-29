@@ -136,6 +136,9 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 												  PStack_p relevant,
 												  int distance);
 long APRGraphCreateDOT(APRControl_p control);
+long APRGraphCreateDOTClausesLabeled(APRControl_p control);
+long APRGraphCreateDOTClauses(APRControl_p control);
+Clause_p APRGetBucketClause(PStack_p bucket);
 int APRBreadthFirstSearch(APRControl_p control, PStack_p nodes, PTree_p *clauses, int relevance);
 PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance);
 PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list);
