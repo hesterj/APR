@@ -183,6 +183,7 @@ typedef enum
    OPT_ALTERN_PATH_REL,
    OPT_LIVE_ALTERN_PATH_REL,
    OPT_ALTERN_PATH_REL_EQUALITY,
+   OPT_PRINT_APR_DOT_GRAPH,
    OPT_DUMMY
 }OptionCodes;
 
@@ -1382,6 +1383,11 @@ OptCell opts[] =
 	'\0', "disable-apr-eq",
 	NoArg, NULL,
 	"Disables equality axiom creation for alternating path axiom filtering "},
+	
+	{OPT_PRINT_APR_DOT_GRAPH,
+	'\0', "apr-dot-graph",
+	 NoArg, NULL,
+	"Creates a DOT format graph file of the initial relevance graph to a file "},
 	
    {OPT_NOOPT,
     '\0', NULL,

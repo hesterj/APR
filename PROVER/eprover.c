@@ -76,6 +76,7 @@ bool              print_sat = false,
    strategy_scheduling = false,
    apr_relevant = false,
    apr_equality = true,
+   apr_dot_graph = false,
    live_apr_relevant = false;
    
 ProofOutput       print_derivation = PONone;
@@ -503,7 +504,7 @@ int main(int argc, char* argv[])
    double current_time = GetTotalCPUTime();
    if (apr_relevant)
    {
-		APRProofStateProcess(proofstate, apr_relevance_limit, apr_equality);
+		APRProofStateProcess(proofstate, apr_relevance_limit, apr_equality, apr_dot_graph);
 		assert(proofstate->axioms->members > 0);
    }
    if (live_apr_relevant)
@@ -893,6 +894,11 @@ CLState_p process_options(int argc, char* argv[])
    {
       switch(handle->option_code)
       {
+		case OPT_PRINT_APR_DOT_GRAPH:
+		{
+				apr_dot_graph = true;
+				break;
+		}
 		case OPT_ALTERN_PATH_REL_EQUALITY:
 				apr_equality = false;
 				break;

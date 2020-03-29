@@ -28,9 +28,9 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=0
-FILE_NAME_0=20774;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.c;0;3
-FILE_NAME_1=5022;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.h;0;3
+current_page=26
+FILE_NAME_0=57107;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.c;0;3
+FILE_NAME_1=4372;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.h;0;3
 FILE_NAME_2=14404;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_ptrees.c;0;3
 FILE_NAME_3=3239;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_ptrees.h;0;3
 FILE_NAME_4=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_plocalstacks.c;0;3
@@ -44,7 +44,7 @@ FILE_NAME_11=3638;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSE
 FILE_NAME_12=1804;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clausefunc.c;0;3
 FILE_NAME_13=1656;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clausefunc.h;0;3
 FILE_NAME_14=57945;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clauses.c;0;3
-FILE_NAME_15=13240;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clauses.h;0;3
+FILE_NAME_15=4909;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clauses.h;0;3
 FILE_NAME_16=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_clausefeatures.c;0;3
 FILE_NAME_17=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_clausefeatures.h;0;3
 FILE_NAME_18=7077;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_clausesetfeatures.c;0;3
@@ -55,7 +55,7 @@ FILE_NAME_22=5466;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSE
 FILE_NAME_23=20010;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_eqnlist.c;0;3
 FILE_NAME_24=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_eqnlist.h;0;3
 FILE_NAME_25=18155;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FPROVER%2Feprover.c;0;3
-FILE_NAME_26=4665;Make;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FMakefile.vars;0;3
+FILE_NAME_26=4625;Make;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FMakefile.vars;0;3
 FILE_NAME_27=254;Python;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FTESTING%2FTPTP-v7.3.0%2Fcollectproblemswithmanyaxioms.py;0;3
 
 [VTE]

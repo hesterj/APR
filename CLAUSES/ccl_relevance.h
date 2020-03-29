@@ -144,9 +144,9 @@ PStack_p APRRelevance(APRControl_p control, ClauseSet_p set, int relevance);
 PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list);
 
 PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance);
-PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance, bool equality);
+PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance, bool equality, bool print_graph);
 
-void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality);
+void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality, bool print_apr_graph);
 void APRLiveProofStateProcess(ProofState_p proofstate, int relevance);
 ClauseSet_p EqualityAxioms(TB_p bank, bool substitution);
 

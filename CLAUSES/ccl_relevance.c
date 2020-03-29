@@ -1289,7 +1289,7 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance)
  *  
 */
 
-PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance, bool equality)
+PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance, bool equality, bool print_graph)
 {
 	APRControl_p control = APRControlAlloc(sig, set->anchor->succ->literals->bank);
 	ClauseSet_p equality_axioms = NULL;
@@ -1317,8 +1317,10 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 																search_distance);
 	PStack_p relevant_without_equality_axs = PStackAlloc();
 	
-	APRGraphCreateDOTClauses(control);
-	
+	if (print_graph)
+	{
+		APRGraphCreateDOTClauses(control);
+	}
 	for (PStackPointer p=0 ; p<PStackGetSP(relevant); p++)
 	{
 		Clause_p relevant_clause = PStackElementP(relevant, p);
@@ -1342,7 +1344,7 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
  *  conjectures.  Deletes the original clauseset of axioms
 */
 
-void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality)
+void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality, bool print_apr_graph)
 {
 	//printf("# Alternating path relevance distance: %d\n", relevance);
 	PList_p conjectures = PListAlloc();
@@ -1356,7 +1358,7 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality)
 		PStack_p relevant = APRRelevanceNeighborhood(proofstate->signature,
 																	proofstate->axioms,
 																	conjectures,
-																	relevance, equality);
+																	relevance, equality, print_apr_graph);
 		fprintf(GlobalOut, "# Relevant axioms at relevance distance %d: %ld of %ld\n", relevance, 
 																								 PStackGetSP(relevant), 
 																								 proofstate->axioms->members);
@@ -1406,7 +1408,7 @@ void APRLiveProofStateProcess(ProofState_p proofstate, int relevance)
 		PStack_p relevant = APRRelevanceNeighborhood(proofstate->signature,
 																	proofstate->unprocessed,
 																	conjectures,
-																	relevance, false);
+																	relevance, false, false);
 		printf("# Relevant unprocessed at relevance distance %d: %ld of %ld\n", relevance, 
 																								 PStackGetSP(relevant), 
 																								 proofstate->unprocessed->members);
