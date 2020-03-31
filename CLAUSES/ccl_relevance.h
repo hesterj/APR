@@ -90,6 +90,7 @@ long ProofStatePreprocess(ProofState_p state, long level);
 typedef struct aprcontrolcell
 {
 	long max_used_node_id;
+	long max_var;
 	bool equality;
 	IntMap_p map;
 	PStack_p buckets;

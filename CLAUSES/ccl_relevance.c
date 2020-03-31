@@ -23,6 +23,7 @@ Changes
 
 #include "ccl_relevance.h"
 #include <che_clausesetfeatures.h>
+#include <omp.h>
 
 
 /*---------------------------------------------------------------------*/
@@ -551,6 +552,7 @@ APRControl_p APRControlAlloc(Sig_p sig, TB_p terms)
 	handle->terms = terms;
 	handle->equality = false;
 	handle->max_used_node_id = 0;
+	handle->max_var = 0;
 	return handle;
 }
 
@@ -727,6 +729,8 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 		{
 			// Choose the appropriate stack to iterate over.
 			// This is to prevent linking equality axioms as relevant to eachother.
+			//int numthreads = omp_get_num_threads();
+			//printf("# %d threads\n", numthreads);
 			PStack_p type1stack = NULL;
 			if (current_node->equality_node)
 			{
@@ -741,7 +745,7 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 				type1stack = control->type1_nodes;
 			}
 			// Try to create edges to type 1 nodes
-			//printf("How many type 1 nodes are we iterating over? %ld\n", PStackGetSP(type1stack));
+			// Candidate for parallelization!  This is where the hard work happens
 			for (PStackPointer t1_iter = 0; 
 				  t1_iter < PStackGetSP(type1stack);
 				  t1_iter++)
@@ -757,22 +761,13 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 				{
 					//printf("# Successful unification\n");
 					visited_node->visited = true;
-					PStackPushP(current_edges, visited_node);
+					//PStackPushP(current_edges, visited_node);
 					PStackPushP(new_start_nodes, visited_node);
-					PStackDiscardElement(type1stack, t1_iter);
 					if (!ClauseQueryProp(visited_node_clause, CPIsAPRRelevant))
 					{
 						ClauseSetProp(visited_node_clause, CPIsAPRRelevant);
 						PStackPushP(relevant, visited_node_clause);
 					}
-					//if (type1stack != control->type1_nodes)
-					if (type1stack == control->type1_equality_nodes)
-					{
-						assert(type1stack != control->type1_nodes);
-						printf("# t1_iter: %ld SP of type1 nodes: %ld\n", t1_iter, PStackGetSP(control->type1_nodes));
-						PStackDiscardElement(control->type1_nodes, t1_iter);
-					}
-					t1_iter--;
 					num_edges++;
 				}
 			}
@@ -1948,6 +1943,99 @@ Clause_p APRGetBucketClause(PStack_p bucket)
 	assert(first_node);
 	Clause_p handle = first_node->clause;
 	return handle;
+}
+
+//~ int APRCreateInterClauseEdges(PStack_p stack)
+//~ {
+	//~ int num_edges = 0;
+	//~ APR_p visited_node = PStackElementP(type1stack, t1_iter);
+	//~ Clause_p visited_node_clause = visited_node->clause;
+	//~ // Do not search from already visited nodes
+	//~ if (visited_node->visited) return 0;
+	//~ // Do not attempt to unify with equality axioms at the final step
+	//~ if (distance == 0 && visited_node->equality_node) continue;
+	//~ Eqn_p visited_literal = visited_node->literal;
+	//~ if (APRComplementarilyUnifiable(current_literal, visited_literal))
+	//~ {
+		//~ //printf("# Successful unification\n");
+		//~ visited_node->visited = true;
+		//~ PStackPushP(current_edges, visited_node);
+		//~ PStackPushP(new_start_nodes, visited_node);
+		//~ PStackDiscardElement(type1stack, t1_iter);
+		//~ if (!ClauseQueryProp(visited_node_clause, CPIsAPRRelevant))
+		//~ {
+			//~ ClauseSetProp(visited_node_clause, CPIsAPRRelevant);
+			//~ PStackPushP(relevant, visited_node_clause);
+		//~ }
+		//~ //if (type1stack != control->type1_nodes)
+		//~ if (type1stack == control->type1_equality_nodes)
+		//~ {
+			//~ assert(type1stack != control->type1_nodes);
+			//~ printf("# t1_iter: %ld SP of type1 nodes: %ld\n", t1_iter, PStackGetSP(control->type1_nodes));
+			//~ PStackDiscardElement(control->type1_nodes, t1_iter);
+		//~ }
+		//~ t1_iter--;
+		//~ num_edges++;
+	//~ }
+//~ }
+
+/*-----------------------------------------------------------------------
+//
+// Function: ClauseCopyFresh()
+//
+//   Create a variable-fresh copy of clause.  Every variable that is 
+//   in the clause is replaced with a fresh one.  variable_subst is the address of the 
+//   substitution replacing the old variables with new ones.  Must be free'd afterwards!
+//
+//	John Hester
+// Global Variables: -
+//
+// Side Effects    : Memory operations
+//
+/----------------------------------------------------------------------*/
+
+Clause_p ClauseCopyFresh(Clause_p clause, APRControl_p control)
+{
+   PTree_p variable_tree;
+   PStack_p variables;
+   PStackPointer p;
+   Subst_p subst;
+   Term_p old_var, fresh_var;
+   Clause_p handle;
+   VarBank_p variable_bank;
+   
+   assert(clause);
+   
+   variable_bank = clause->literals->bank->vars;
+   variables = PStackAlloc();
+   variable_tree = NULL;
+   subst = SubstAlloc();
+   
+   ClauseCollectVariables(clause, &variable_tree);
+   PTreeToPStack(variables, variable_tree);
+   PTreeFree(variable_tree);
+   
+   for (p = 0; p < PStackGetSP(variables); p++)
+   {
+	   old_var = PStackElementP(variables, p);
+	   control->max_var -= 2;
+	   fresh_var = VarBankVarAssertAlloc(variable_bank, control->max_var, old_var->type);
+	   assert(fresh_var != old_var);
+	   assert(fresh_var->f_code != old_var->f_code);
+	   if (fresh_var->f_code == old_var->f_code)
+	   {
+			printf("Clause copy fresh error\n");
+			exit(0);
+		}
+	   SubstAddBinding(subst, old_var, fresh_var);
+   }
+   
+   handle = ClauseCopy(clause, clause->literals->bank);
+   
+   SubstDelete(subst);
+   PStackFree(variables);
+
+   return handle;
 }
 
 /*---------------------------------------------------------------------*/
