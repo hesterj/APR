@@ -30,7 +30,7 @@ Changes
 #include <ccl_findex.h>
 #include <ccl_proofstate.h>
 //#include <tensorflow/c/c_api.h>
-//#include <omp.h>
+#include <omp.h>
 
 /*---------------------------------------------------------------------*/
 /*                    Data type declarations                           */
@@ -89,18 +89,21 @@ long ProofStatePreprocess(ProofState_p state, long level);
 
 typedef struct aprcontrolcell
 {
-	long max_used_node_id;
-	long max_var;
-	bool equality;
-	IntMap_p map;
-	PStack_p buckets;
-	PStack_p graph_nodes;
-	PStack_p type1_nodes;
+	long max_used_node_id; 
+	long max_var; // Largest (negative) variable f_code used
+	bool equality; // Create equality axioms?
+	bool build_graph; // Actually create edges- used for printing the graph at end
+	IntMap_p map; // Given an ident, return the stack of nodes for that clause
+	IntMap_p original_clause_map; // Given an ident, return a pointer to the original clause
+	PStack_p buckets; // Collection of all the buckets.  One clause corresponds with one bucket
+	PStack_p graph_nodes; // Stack of all the nodes
+	PStack_p type1_nodes; 
 	PStack_p type2_nodes;
 	PStack_p type1_equality_nodes;
 	PStack_p type1_nonequality_nodes;
 	ClauseSet_p equality_axioms;
-	FixedDArray_p substitution_axiom_characteristic;
+	ClauseSet_p fresh_clauses; // Set of clauses with all fresh variables for multithreading
+	FixedDArray_p substitution_axiom_characteristic; // 0 at index f_code if no equality axiom created, 1 otherwise
 	Sig_p sig;
 	TB_p terms;
 }APRControlCell, *APRControl_p;
@@ -156,6 +159,17 @@ int APRNodeAddSubstAxioms(APRControl_p control, APR_p node);
 int EqnAddSubstAxioms(APRControl_p control, Eqn_p eqn);
 int TermAddSubstAxioms(APRControl_p control, Term_p term);
 Clause_p ClauseCreateSubstitutionAxiom(APRControl_p control, Sig_p sig, FunCode f_code);
+
+int APRCreateInterClauseEdges(APRControl_p control,
+										Eqn_p current_literal,
+										PStack_p type1stack, 
+										PStack_p new_start_nodes,
+										PStack_p current_edges,
+										PStack_p relevant, 
+										PStackPointer t1_iter, 
+										int distance);
+
+Clause_p ClauseCopyFresh(Clause_p clause, APRControl_p control);
 
 
 #endif

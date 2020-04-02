@@ -23,7 +23,6 @@ Changes
 
 #include "ccl_relevance.h"
 #include <che_clausesetfeatures.h>
-#include <omp.h>
 
 
 /*---------------------------------------------------------------------*/
@@ -539,6 +538,8 @@ APRControl_p APRControlAlloc(Sig_p sig, TB_p terms)
 {
 	APRControl_p handle = APRControlCellAlloc();
 	handle->map = IntMapAlloc();
+	handle->original_clause_map = IntMapAlloc();
+	handle->fresh_clauses = ClauseSetAlloc();
 	handle->buckets = PStackAlloc();
 	handle->graph_nodes = PStackAlloc();
 	handle->type1_nodes = PStackAlloc();
@@ -551,6 +552,7 @@ APRControl_p APRControlAlloc(Sig_p sig, TB_p terms)
 	handle->sig = sig;
 	handle->terms = terms;
 	handle->equality = false;
+	handle->build_graph = false;
 	handle->max_used_node_id = 0;
 	handle->max_var = 0;
 	return handle;
@@ -559,6 +561,8 @@ APRControl_p APRControlAlloc(Sig_p sig, TB_p terms)
 void APRControlFree(APRControl_p trash)
 {
 	IntMapFree(trash->map);
+	IntMapFree(trash->original_clause_map);
+	ClauseSetFree(trash->fresh_clauses);
 	PStack_p trash_bucket = NULL;
 	while (!PStackEmpty(trash->buckets))
 	{
@@ -746,31 +750,25 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 			}
 			// Try to create edges to type 1 nodes
 			// Candidate for parallelization!  This is where the hard work happens
+			//~ omp_lock_t writelock;
+			//~ omp_init_lock(&writelock);
+			//~ omp_set_num_threads(4);
+			//~ #pragma omp parallel for
 			for (PStackPointer t1_iter = 0; 
 				  t1_iter < PStackGetSP(type1stack);
 				  t1_iter++)
 			{
-				APR_p visited_node = PStackElementP(type1stack, t1_iter);
-				Clause_p visited_node_clause = visited_node->clause;
-				// Do not search from already visited nodes
-				if (visited_node->visited) continue;
-				// Do not attempt to unify with equality axioms at the final step
-				if (distance == 0 && visited_node->equality_node) continue;
-				Eqn_p visited_literal = visited_node->literal;
-				if (APRComplementarilyUnifiable(current_literal, visited_literal))
-				{
-					//printf("# Successful unification\n");
-					visited_node->visited = true;
-					//PStackPushP(current_edges, visited_node);
-					PStackPushP(new_start_nodes, visited_node);
-					if (!ClauseQueryProp(visited_node_clause, CPIsAPRRelevant))
-					{
-						ClauseSetProp(visited_node_clause, CPIsAPRRelevant);
-						PStackPushP(relevant, visited_node_clause);
-					}
-					num_edges++;
-				}
+				//printf("# Creating interclause edges\n");
+				APRCreateInterClauseEdges(control,
+													current_literal,
+													type1stack, 
+													new_start_nodes,
+													current_edges,
+													relevant, 
+													t1_iter, 
+													distance);
 			}
+			//omp_destroy_lock(&writelock);
 		}
 	}
 	fprintf(GlobalOut, "\n");
@@ -1008,7 +1006,6 @@ bool APRComplementarilyUnifiable(Eqn_p a, Eqn_p b)
 	if (a==b) return false;  // Easy case...  
 	if (EqnIsPositive(a) && EqnIsPositive(b)) return false;
 	if (EqnIsNegative(a) && EqnIsNegative(b)) return false;
-	
 	Eqn_p a_disj = EqnCopyDisjoint(a);
 	//printf("a_disj: ");EqnTSTPPrint(GlobalOut, a_disj, true);printf("\n");
 	//printf("b: ");EqnTSTPPrint(GlobalOut, b, true);printf("\n");
@@ -1089,12 +1086,17 @@ bool APRGraphAddNodes(APRControl_p control, Clause_p clause, bool equality)
 	// Nodes
 	PStack_p buckets = control->buckets; 
 	IntMap_p map = control->map;
+	//IntMap_p original_clause_map = control->original_clause_map;
 	PStack_p graph_nodes = control->graph_nodes;
 	PStack_p clause_bucket = PStackAlloc();
 	PStackPushP(buckets, clause_bucket);
 	long handle_ident = ClauseGetIdent(clause);
 	IntMapAssign(map, handle_ident, clause_bucket);
-	PStack_p clause_literals = EqnListToStack(clause->literals);
+	//IntMapAssign(original_clause_map, handle_ident, clause);
+	PStack_p clause_literals = EqnListToStack(clause->literals); // Original
+	//Clause_p fresh_clause = ClauseCopyFresh(clause, control); //
+	//ClauseSetInsert(control->fresh_clauses, fresh_clause); //
+	//PStack_p clause_literals = EqnListToStack(fresh_clause->literals); //
 	for (PStackPointer p = 0; p < PStackGetSP(clause_literals); p++)
 	{
 		Eqn_p literal = PStackElementP(clause_literals, p);
@@ -1306,6 +1308,11 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 	// Set the number of steps to take in building the graph
 	int search_distance = (2*relevance) - 2;
 	
+	if (print_graph)
+	{
+		control->build_graph = true;
+	}
+	
 	PStack_p relevant = APRBuildGraphConjectures(control, 
 																set, 
 																list, 
@@ -1344,7 +1351,7 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality,
 	//printf("# Alternating path relevance distance: %d\n", relevance);
 	PList_p conjectures = PListAlloc();
 	PList_p non_conjectures = PListAlloc();
-	long conj_found = ClauseSetSplitConjectures(proofstate->axioms, 
+	ClauseSetSplitConjectures(proofstate->axioms, 
 									  conjectures, 
 									  non_conjectures);
 	PListFree(non_conjectures);
@@ -1411,7 +1418,6 @@ void APRLiveProofStateProcess(ProofState_p proofstate, int relevance)
 		{
 			proofstate->state_is_complete = false;
 		}
-		ClauseSet_p relevant_set = ClauseSetAlloc();
 		printf("# %ld relevant unprocessed clauses found\n", PStackGetSP(relevant));
 		int removed = 0;
 		ClauseSet_p new_unprocessed = ClauseSetAlloc();
@@ -1945,39 +1951,41 @@ Clause_p APRGetBucketClause(PStack_p bucket)
 	return handle;
 }
 
-//~ int APRCreateInterClauseEdges(PStack_p stack)
-//~ {
-	//~ int num_edges = 0;
-	//~ APR_p visited_node = PStackElementP(type1stack, t1_iter);
-	//~ Clause_p visited_node_clause = visited_node->clause;
-	//~ // Do not search from already visited nodes
-	//~ if (visited_node->visited) return 0;
-	//~ // Do not attempt to unify with equality axioms at the final step
-	//~ if (distance == 0 && visited_node->equality_node) continue;
-	//~ Eqn_p visited_literal = visited_node->literal;
-	//~ if (APRComplementarilyUnifiable(current_literal, visited_literal))
-	//~ {
-		//~ //printf("# Successful unification\n");
-		//~ visited_node->visited = true;
-		//~ PStackPushP(current_edges, visited_node);
-		//~ PStackPushP(new_start_nodes, visited_node);
-		//~ PStackDiscardElement(type1stack, t1_iter);
-		//~ if (!ClauseQueryProp(visited_node_clause, CPIsAPRRelevant))
-		//~ {
-			//~ ClauseSetProp(visited_node_clause, CPIsAPRRelevant);
-			//~ PStackPushP(relevant, visited_node_clause);
-		//~ }
-		//~ //if (type1stack != control->type1_nodes)
-		//~ if (type1stack == control->type1_equality_nodes)
-		//~ {
-			//~ assert(type1stack != control->type1_nodes);
-			//~ printf("# t1_iter: %ld SP of type1 nodes: %ld\n", t1_iter, PStackGetSP(control->type1_nodes));
-			//~ PStackDiscardElement(control->type1_nodes, t1_iter);
-		//~ }
-		//~ t1_iter--;
-		//~ num_edges++;
-	//~ }
-//~ }
+int APRCreateInterClauseEdges(APRControl_p control,
+										Eqn_p current_literal,
+										PStack_p type1stack, 
+										PStack_p new_start_nodes,
+										PStack_p current_edges,
+										PStack_p relevant, 
+										PStackPointer t1_iter, 
+										int distance)
+{
+	APR_p visited_node = PStackElementP(type1stack, t1_iter);
+	Clause_p visited_node_clause = visited_node->clause;
+	int edge_found = 0;
+	// Do not search from already visited nodes
+	if (visited_node->visited) return 0;
+	// Do not attempt to unify with equality axioms at the final step
+	if (distance == 0 && visited_node->equality_node) return 0;
+	Eqn_p visited_literal = visited_node->literal;
+	if (APRComplementarilyUnifiable(current_literal, visited_literal))
+	{
+		//printf("# Successful unification\n");
+		visited_node->visited = true;
+		if (control->build_graph)
+		{
+			PStackPushP(current_edges, visited_node);
+		}
+		PStackPushP(new_start_nodes, visited_node);
+		if (!ClauseQueryProp(visited_node_clause, CPIsAPRRelevant))
+		{
+			ClauseSetProp(visited_node_clause, CPIsAPRRelevant);
+			PStackPushP(relevant, visited_node_clause);
+			edge_found = 1;
+		}
+	}
+	return edge_found;
+}
 
 /*-----------------------------------------------------------------------
 //
@@ -2019,13 +2027,13 @@ Clause_p ClauseCopyFresh(Clause_p clause, APRControl_p control)
    {
 	   old_var = PStackElementP(variables, p);
 	   control->max_var -= 2;
+	   //printf("# %ld\n", control->max_var);
 	   fresh_var = VarBankVarAssertAlloc(variable_bank, control->max_var, old_var->type);
-	   assert(fresh_var != old_var);
-	   assert(fresh_var->f_code != old_var->f_code);
+	   //assert(fresh_var != old_var);
+	   //assert(fresh_var->f_code != old_var->f_code);
 	   if (fresh_var->f_code == old_var->f_code)
 	   {
-			printf("Clause copy fresh error\n");
-			exit(0);
+			continue;
 		}
 	   SubstAddBinding(subst, old_var, fresh_var);
    }
