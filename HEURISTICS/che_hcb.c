@@ -293,7 +293,6 @@ long HCBAddWFCB(HCB_p hcb, WFCB_p wfcb, long steps)
    PDArrayAssignP(hcb->wfcb_list, hcb->wfcb_no, wfcb);
    PDArrayAssignInt(hcb->select_switch, hcb->wfcb_no, steps);
    hcb->wfcb_no++;
-
    hcb->hcb_select = (hcb->wfcb_no != 1) ?
       HCBStandardClauseSelect : HCBSingleWeightClauseSelect;
 
