@@ -1293,8 +1293,8 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 	control->equality = equality;
 	if (equality && ClauseSetIsEquational(set))
 	{
-		equality_axioms = ClauseSetAlloc();
-		//equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank, 0);
+		//equality_axioms = ClauseSetAlloc();
+		equality_axioms = EqualityAxioms(set->anchor->succ->literals->bank, true);  // true enables creation of equality substitution axioms
 		control->equality_axioms = equality_axioms;
 		ClauseSetSetProp(equality_axioms, CPDeleteClause);
 		fprintf(GlobalOut, "# Building initial APR graph with %ld extra equality axiom(s)\n", equality_axioms->members);

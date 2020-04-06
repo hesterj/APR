@@ -29,8 +29,8 @@ long_line_column=72
 
 [files]
 current_page=26
-FILE_NAME_0=57107;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.c;0;3
-FILE_NAME_1=4372;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.h;0;3
+FILE_NAME_0=40060;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.c;0;3
+FILE_NAME_1=5516;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.h;0;3
 FILE_NAME_2=14404;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_ptrees.c;0;3
 FILE_NAME_3=3239;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_ptrees.h;0;3
 FILE_NAME_4=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_plocalstacks.c;0;3
@@ -41,8 +41,8 @@ FILE_NAME_8=4727;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FTERMS%2Fc
 FILE_NAME_9=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FTERMS%2Fcte_subst.h;0;3
 FILE_NAME_10=3793;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_f_generality.c;0;3
 FILE_NAME_11=3638;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_f_generality.h;0;3
-FILE_NAME_12=1804;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clausefunc.c;0;3
-FILE_NAME_13=1656;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clausefunc.h;0;3
+FILE_NAME_12=9006;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clausefunc.c;0;3
+FILE_NAME_13=1729;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clausefunc.h;0;3
 FILE_NAME_14=57945;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clauses.c;0;3
 FILE_NAME_15=4909;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clauses.h;0;3
 FILE_NAME_16=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_clausefeatures.c;0;3
@@ -57,6 +57,23 @@ FILE_NAME_24=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2
 FILE_NAME_25=18155;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FPROVER%2Feprover.c;0;3
 FILE_NAME_26=4625;Make;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FMakefile.vars;0;3
 FILE_NAME_27=254;Python;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FTESTING%2FTPTP-v7.3.0%2Fcollectproblemswithmanyaxioms.py;0;3
+FILE_NAME_28=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_hcb.h;0;3
+FILE_NAME_29=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_hcb.c;0;3
+FILE_NAME_30=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_fifo.h;0;3
+FILE_NAME_31=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_fifo.c;0;3
+FILE_NAME_32=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_heuristics.h;0;3
+FILE_NAME_33=773;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_heuristics.c;0;3
+FILE_NAME_34=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_hcbadmin.h;0;3
+FILE_NAME_35=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FHEURISTICS%2Fche_hcbadmin.c;0;3
+FILE_NAME_36=16288;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clausesets.c;0;3
+FILE_NAME_37=3359;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_clausesets.h;0;3
+FILE_NAME_38=4855;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_garbage_coll.c;0;3
+FILE_NAME_39=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_garbage_coll.h;0;3
+FILE_NAME_40=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCONTROL%2Fcco_batch_spec.c;0;3
+FILE_NAME_41=29857;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCONTROL%2Fcco_proofproc.c;0;3
+FILE_NAME_42=465;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCONTROL%2Fcco_proofproc.h;0;3
+FILE_NAME_43=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_proofstate.c;0;3
+FILE_NAME_44=1736;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_proofstate.h;0;3
 
 [VTE]
 last_dir=/home
