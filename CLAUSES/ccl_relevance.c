@@ -1368,20 +1368,19 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality,
 		{
 			proofstate->state_is_complete = false;
 		}
-		ClauseSet_p relevant_set = ClauseSetAlloc();
-		for (PStackPointer p=0; p<PStackGetSP(relevant); p++)
+		Clause_p axiom_handle = NULL;
+		Clause_p tmp = NULL;
+		for (axiom_handle = proofstate->axioms->anchor->succ;
+			  axiom_handle != proofstate->axioms->anchor;
+			  axiom_handle = tmp)
 		{
-			Clause_p relevant_clause = PStackElementP(relevant, p);
-			assert(relevant_clause);
-			ClauseSetMoveClause(relevant_set, relevant_clause);
+			tmp = axiom_handle->succ;
+			if (!ClauseQueryProp(axiom_handle, CPIsAPRRelevant))
+			{
+				ClauseSetMoveClause(proofstate->archive, axiom_handle);
+			}
 		}
-		if (ClauseIsConjecture(proofstate->axioms->anchor->succ))
-		{
-			printf("# Irrelevant conjecture error\n");
-			assert(ClauseQueryProp(proofstate->axioms->anchor->succ, CPIsAPRRelevant));
-		}
-		ClauseSetFree(proofstate->axioms);
-		proofstate->axioms = relevant_set;
+		assert(PStackGetSP(relevant) == ClauseSetCardinality(proofstate->axioms));
 		assert(proofstate->axioms->members > 0);
 		PStackFree(relevant);
 	}
