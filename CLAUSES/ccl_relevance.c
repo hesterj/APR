@@ -919,12 +919,17 @@ long APRGraphUpdateEdgesDeleteOld(APRControl_p control)
 
 long APRGraphUpdateEdges(APRControl_p control)
 {
-	printf("# Updating APR edges\n");
 	PStack_p graph_nodes = control->graph_nodes;
 	IntMap_p map = control->map;
 	long num_edges = 0;
+	//printf("# %ld nodes\n", PStackGetSP(graph_nodes));
 	for (PStackPointer graph_iterator = 0; graph_iterator<PStackGetSP(graph_nodes); graph_iterator++)
 	{
+		//~ if (graph_iterator % 100 == 0)
+		//~ {
+			//~ printf(".");
+			//~ fflush(stdout);
+		//~ }
 		APR_p current_node = PStackElementP(graph_nodes, graph_iterator);
 		Clause_p current_clause = current_node->clause;
 		Eqn_p current_literal = current_node->literal;
@@ -1343,7 +1348,7 @@ PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int 
 }
 
 /*  Removes axioms from proofstate that are not relevant to
- *  conjectures.  Deletes the original clauseset of axioms
+ *  conjectures. 
 */
 
 void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality, bool print_apr_graph)
@@ -2044,6 +2049,52 @@ Clause_p ClauseCopyFresh(Clause_p clause, APRControl_p control)
 
    return handle;
 }
+
+/* Test method for creating many subproblems based on relevancy for
+ * continuing proof search after a failed attempt.
+*/
+
+void APRProofStateProcessTest(ProofState_p proofstate, int relevance, bool equality, bool print_apr_graph)
+{
+	printf("# Creating APR graph of proofstate\n");
+	PList_p conjectures = PListAlloc();
+	PList_p non_conjectures = PListAlloc();
+	ClauseSetSplitConjectures(proofstate->axioms, 
+									  conjectures, 
+									  non_conjectures);
+	PListFree(non_conjectures);
+	APRControl_p control = APRControlAlloc(proofstate->signature, proofstate->terms);
+	control->build_graph = true;
+	long total_number = ProofStateCardinality(proofstate);
+	printf("# U:%ld PR:%ld PE:%ld NU:%ld NNU:%ld Total:%ld\n", proofstate->unprocessed->members,
+												proofstate->processed_pos_rules->members,
+												proofstate->processed_pos_eqns->members,
+												proofstate->processed_neg_units->members,
+												proofstate->processed_non_units->members,
+												total_number);
+	APRGraphAddClausesList(control, conjectures);
+	APRGraphAddClauses(control, proofstate->unprocessed ,false);
+	APRGraphAddClauses(control, proofstate->processed_pos_rules ,false);
+	APRGraphAddClauses(control, proofstate->processed_pos_eqns ,false);
+	APRGraphAddClauses(control, proofstate->processed_neg_units ,false);
+	APRGraphAddClauses(control, proofstate->processed_non_units ,false);
+	printf("# Updating edges of APR graph\n");
+	//APRGraphUpdateEdges(control);
+	PStack_p start_nodes = APRCollectNodesFromList(control, conjectures);
+	PStack_p relevant_stack = PStackAlloc();
+   APRGraphUpdateEdgesFromListStack(control, NULL,
+													 start_nodes, 
+													 relevant_stack, 
+													 1);
+	printf("# Printing APR graph. %ld of %ld relevant.\n", PStackGetSP(relevant_stack), total_number);
+	APRGraphCreateDOTClausesLabeled(control);
+	PStackFree(relevant_stack);
+	PStackFree(start_nodes);
+	APRControlFree(control);
+	PListFree(conjectures);
+	printf("# APR finished\n");
+}
+
 
 /*---------------------------------------------------------------------*/
 /*                        End of File                                  */

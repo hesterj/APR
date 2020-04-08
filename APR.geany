@@ -28,9 +28,9 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=26
-FILE_NAME_0=40060;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.c;0;3
-FILE_NAME_1=5516;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.h;0;3
+current_page=0
+FILE_NAME_0=42391;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.c;0;3
+FILE_NAME_1=5692;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FCLAUSES%2Fccl_relevance.h;0;3
 FILE_NAME_2=14404;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_ptrees.c;0;3
 FILE_NAME_3=3239;C++;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_ptrees.h;0;3
 FILE_NAME_4=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fhesterj%2FProjects%2FAPR%2FBASICS%2Fclb_plocalstacks.c;0;3

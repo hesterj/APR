@@ -151,6 +151,7 @@ PStack_p APRRelevanceList(APRControl_p control, PList_p list, int relevance);
 PStack_p APRRelevanceNeighborhood(Sig_p sig, ClauseSet_p set, PList_p list, int relevance, bool equality, bool print_graph);
 
 void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality, bool print_apr_graph);
+void APRProofStateProcessTest(ProofState_p proofstate, int relevance, bool equality, bool print_apr_graph);
 void APRLiveProofStateProcess(ProofState_p proofstate, int relevance);
 ClauseSet_p EqualityAxioms(TB_p bank, bool substitution);
 

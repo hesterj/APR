@@ -498,8 +498,8 @@ int main(int argc, char* argv[])
                                             eqdef_maxclauses);
    }
    
-   printf("# Clauses removed by preprocessing %ld\n", preproc_removed);
-   ProofStatePrint(GlobalOut, proofstate); // JH
+   //printf("# Clauses removed by preprocessing %ld\n", preproc_removed);
+   //ProofStatePrint(GlobalOut, proofstate); // JH
    
    double current_time = GetTotalCPUTime();
    if (apr_relevant)
@@ -572,6 +572,8 @@ int main(int argc, char* argv[])
                          generated_limit, tb_insert_limit, answer_limit);
    }
    PERF_CTR_EXIT(SatTimer);
+   
+   APRProofStateProcessTest(proofstate, NULL, NULL, NULL); // JH
 
    if(SigHasUnimplementedInterpretedSymbols(proofstate->signature))
    {
