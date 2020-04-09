@@ -1612,7 +1612,6 @@ Clause_p Saturate(ProofState_p state, ProofControl_p control, long
       sat_check_step_limit = control->heuristic_parms.sat_check_step_limit,
       sat_check_ttinsert_limit = control->heuristic_parms.sat_check_ttinsert_limit;
 
-
    while(!TimeIsUp &&
          !ClauseSetEmpty(state->unprocessed) &&
          step_limit   > count &&

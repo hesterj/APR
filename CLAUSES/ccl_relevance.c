@@ -683,14 +683,14 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 		//fprintf(GlobalOut, "\r# %ld remaining at depth", PStackGetSP(start_nodes_stack)-graph_iterator);
 		//fflush(GlobalOut);
 		APR_p current_node = PStackElementP(start_nodes_stack, graph_iterator);
-		Clause_p current_clause = current_node->clause;
-		Eqn_p current_literal = current_node->literal;
+		PStack_p current_edges = current_node->edges;
 		if (PStackGetSP(current_node->edges) > 0)
 		{
 			continue;
 		}
 		
-		PStack_p current_edges = current_node->edges;
+		Clause_p current_clause = current_node->clause;
+		Eqn_p current_literal = current_node->literal;
 		long current_ident = ClauseGetIdent(current_clause);
 		
 		assert(current_node);
@@ -713,19 +713,27 @@ long APRGraphUpdateEdgesFromListStack(APRControl_p control,
 				APR_p bucket_node = PStackElementP(current_bucket, bucket_iterator);
 				assert(bucket_node);
 				assert(bucket_node->type);
+				assert(bucket_node->clause == current_clause);
 				if ((bucket_node->type == 1))
 				{
 					continue;
 				}
 				// node has type 2
 				assert(bucket_node->type == 2);
-				if (!bucket_node->visited && bucket_node->literal != current_literal)
+				if (bucket_node->literal != current_literal)
 				{
-					bucket_node->visited = true;
-					assert(bucket_node->clause == current_clause);
-					PStackPushP(current_edges, bucket_node);
-					PStackPushP(new_start_nodes, bucket_node);
-					num_edges++;
+					if (bucket_node->visited)
+					{
+						PStackPushP(current_edges, bucket_node);
+						num_edges++;
+					}
+					else
+					{
+						bucket_node->visited = true;
+						PStackPushP(current_edges, bucket_node);
+						PStackPushP(new_start_nodes, bucket_node);
+						num_edges++;
+					}
 				}
 			}
 		}
@@ -816,6 +824,7 @@ PStack_p APRCollectNodesFromList(APRControl_p control, PList_p list)
 			if (clause_node->type == 2)
 			{
 				PStackPushP(graph_nodes, clause_node);
+				ClauseSetProp(clause_handle, CPIsAPRRelevant);
 				clause_node->visited = true;
 			}
 		}
@@ -1385,7 +1394,6 @@ void APRProofStateProcess(ProofState_p proofstate, int relevance, bool equality,
 				ClauseSetMoveClause(proofstate->archive, axiom_handle);
 			}
 		}
-		assert(PStackGetSP(relevant) == ClauseSetCardinality(proofstate->axioms));
 		assert(proofstate->axioms->members > 0);
 		PStackFree(relevant);
 	}
@@ -1967,7 +1975,7 @@ int APRCreateInterClauseEdges(APRControl_p control,
 	APR_p visited_node = PStackElementP(type1stack, t1_iter);
 	Clause_p visited_node_clause = visited_node->clause;
 	int edge_found = 0;
-	// Do not search from already visited nodes
+	// Do not search to already visited nodes
 	if (visited_node->visited) return 0;
 	// Do not attempt to unify with equality axioms at the final step
 	if (distance == 0 && visited_node->equality_node) return 0;
@@ -2078,14 +2086,14 @@ void APRProofStateProcessTest(ProofState_p proofstate, int relevance, bool equal
 	APRGraphAddClauses(control, proofstate->processed_pos_eqns ,false);
 	APRGraphAddClauses(control, proofstate->processed_neg_units ,false);
 	APRGraphAddClauses(control, proofstate->processed_non_units ,false);
-	printf("# Updating edges of APR graph\n");
+	printf("# Updating edges of APR graph.  There are %ld nodes.\n", PStackGetSP(control->graph_nodes));
 	//APRGraphUpdateEdges(control);
 	PStack_p start_nodes = APRCollectNodesFromList(control, conjectures);
 	PStack_p relevant_stack = PStackAlloc();
    APRGraphUpdateEdgesFromListStack(control, NULL,
 													 start_nodes, 
 													 relevant_stack, 
-													 1);
+													 10);
 	printf("# Printing APR graph. %ld of %ld relevant.\n", PStackGetSP(relevant_stack), total_number);
 	APRGraphCreateDOTClausesLabeled(control);
 	PStackFree(relevant_stack);

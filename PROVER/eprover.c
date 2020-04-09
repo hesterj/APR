@@ -573,7 +573,7 @@ int main(int argc, char* argv[])
    }
    PERF_CTR_EXIT(SatTimer);
    
-   APRProofStateProcessTest(proofstate, NULL, NULL, NULL); // JH
+   //APRProofStateProcessTest(proofstate, NULL, NULL, NULL); // JH
 
    if(SigHasUnimplementedInterpretedSymbols(proofstate->signature))
    {
